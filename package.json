@@ -1,0 +1,17 @@
+{
+  "name": "qa-workspaces",
+  "version": "0.1.0",
+  "description": "QA Workspace — หน้า Jira (Create Issue + List/Reject) ยิงบั๊กเข้า Jira ผ่าน Claude",
+  "private": true,
+  "scripts": {
+    "start": "node tools/qa-workspace/server.js",
+    "jira": "node tools/qa-workspace/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1"
+  }
+}

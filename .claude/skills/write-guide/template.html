@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title><!-- TITLE: ชื่อคู่มือ --></title>
+<style>
+  :root{
+    --bg:#fbf7f0; --card:#ffffff; --ink:#2b2b2b; --muted:#6b6b6b;
+    --line:#e7e0d4; --brand:#3b82f6; --mview:#8b5cf6; --aview:#06b6d4; --uview:#d97706;
+    --good:#16a34a; --warn:#f59e0b; --bad:#ef4444;
+    --soft:#f4eee3; --shadow:0 2px 10px rgba(0,0,0,.06);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Sukhumvit Set","Kanit","Noto Sans Thai","Segoe UI",system-ui,-apple-system,sans-serif;
+    line-height:1.75; font-size:18px;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:24px 20px 120px}
+  header.top{
+    text-align:center; padding:48px 20px 28px;
+    background:linear-gradient(160deg,#fff7ed,#eef2ff);
+    border-bottom:1px solid var(--line);
+  }
+  header.top h1{font-size:34px; margin:0 0 8px; line-height:1.3}
+  header.top p{margin:6px auto; max-width:680px; color:var(--muted); font-size:18px}
+  .pill{display:inline-block; font-size:14px; padding:4px 12px; border-radius:999px; background:#fff; border:1px solid var(--line); margin:4px}
+  .vtag{font-size:.5em; vertical-align:middle; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; border-radius:999px; padding:2px 12px}
+
+  h2{font-size:27px; margin:48px 0 8px; padding-top:12px; border-top:3px dashed var(--line)}
+  h3{font-size:22px; margin:30px 0 6px}
+  h4{font-size:19px; margin:18px 0 4px}
+  p{margin:10px 0}
+  .lead{font-size:19px}
+  a{color:var(--brand)}
+
+  .toc{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 22px; box-shadow:var(--shadow); margin-top:24px;
+  }
+  .toc h3{margin-top:0}
+  .toc ol{margin:6px 0; padding-left:22px}
+  .toc a{text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow); margin:16px 0}
+  .step{border-left:6px solid var(--brand)}
+  .step.m{border-left-color:var(--mview)}
+  .step.a{border-left-color:var(--aview)}
+  .step.u{border-left-color:var(--uview)}
+
+  .badge{display:inline-block; font-size:13px; font-weight:700; color:#fff; border-radius:8px; padding:2px 10px; margin-right:8px; vertical-align:middle}
+  .b-step{background:var(--muted)}
+  .b-m{background:var(--mview)}
+  .b-a{background:var(--aview)}
+  .b-u{background:var(--uview)}
+  .b-new{background:var(--good)}
+  .b-move{background:var(--mview)}
+  .b-fix{background:var(--uview)}
+  .b-api{background:var(--aview)}
+  /* aliases for the write-guide template vocabulary */
+  .b-old{background:var(--muted)}
+  .b-brand{background:var(--brand)}
+
+  .ui{background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:1px 8px; font-weight:600; white-space:nowrap}
+  .key{background:#f1f5f9; border:1px solid #e2e8f0; border-radius:6px; padding:0 6px; font-family:ui-monospace,Menlo,monospace; font-size:.92em}
+
+  .note{background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:12px 16px; margin:14px 0}
+  .note.good{background:#f0fdf4; border-color:#bbf7d0}
+  .note.warn{background:#fffbeb; border-color:#fde68a}   /* alias: default note = warn */
+  .note.bad{background:#fef2f2; border-color:#fecaca}
+  .note b{display:block; margin-bottom:2px}
+
+  .ex{background:var(--soft); border-radius:12px; padding:14px 16px; margin:14px 0}
+  .ex h4{margin-top:0; color:#92400e}
+  .ex pre{background:#1f2937; color:#e5e7eb; border-radius:10px; padding:12px 14px; overflow-x:auto; font-size:13.5px; line-height:1.55; font-family:ui-monospace,Menlo,monospace}
+  .ex pre .g{color:#86efac} .ex pre .y{color:#fde047} .ex pre .c{color:#93c5fd} .ex pre .dim{color:#9ca3af}
+
+  .twoCol{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media(max-width:680px){.twoCol{grid-template-columns:1fr}}
+
+  table.dt{border-collapse:collapse; width:100%; font-size:15px; margin:8px 0; background:#fff}
+  table.dt th,table.dt td{border:1px solid var(--line); padding:6px 10px; text-align:left}
+  table.dt th{background:var(--soft); font-weight:700}
+  table.dt td.num{text-align:right; font-variant-numeric:tabular-nums}
+  table.dt .hl{background:#fef9c3}
+  table.dt .null{color:#9ca3af; font-style:italic}
+
+  ul.simple{margin:8px 0; padding-left:22px}
+  ul.simple li{margin:4px 0}
+  ol.simple{margin:8px 0; padding-left:22px}
+  ol.simple li{margin:6px 0}
+
+  footer{text-align:center; color:var(--muted); font-size:14px; margin-top:60px}
+  .top-link{display:block; text-align:right; font-size:13px; margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- ============ 1) HEADER — ดึงดูด + สรุปว่าคืออะไร มีประโยชน์ยังไง ============ -->
+<header class="top">
+  <h1>🔔 <!-- ชื่อคู่มือ --> <span class="vtag">v1</span></h1>
+  <p class="lead"><!-- 1-2 ประโยค: ฟีเจอร์นี้คืออะไร แก้ปัญหาอะไรให้ผู้ใช้ --></p>
+  <div>
+    <span class="pill">⚡ <!-- จุดขาย 1 --></span>
+    <span class="pill">🎯 <!-- จุดขาย 2 --></span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ 2) OVERVIEW — ภาพรวม + เปรียบเทียบ เก่า vs ใหม่ ============ -->
+  <div class="card">
+    <h3 style="margin-top:0">🤔 ระบบนี้ทำงานอย่างไร?</h3>
+    <p><!-- อธิบายด้วยการเปรียบเทียบให้เห็นภาพ --></p>
+    <ul class="simple">
+      <li>🐢 <b>แบบเก่า:</b> <!-- ปัญหาเดิม --></li>
+      <li>🚀 <b>แบบใหม่:</b> <!-- วิธีที่ระบบใหม่ทำงาน --></li>
+    </ul>
+  </div>
+
+  <!-- ============ สารบัญ (ใส่เมื่อมี 3+ หัวข้อ) ============ -->
+  <div class="toc">
+    <h3>📑 สารบัญ — กดเพื่อข้ามไปอ่านได้เลย</h3>
+    <ol>
+      <li><a href="#s1"><!-- หัวข้อ 1 --></a></li>
+      <li><a href="#s2"><!-- หัวข้อ 2 --></a></li>
+    </ol>
+  </div>
+
+  <!-- ============ 3) STEP-BY-STEP — วิธีใช้ทีละขั้น ============ -->
+  <div class="card" id="s1">
+    <h3>📌 <!-- ชื่อขั้นตอน --></h3>
+    <ol class="simple">
+      <li>ไปที่เมนู <span class="ui">ตั้งค่า</span> &gt; การเชื่อมต่อ</li>
+      <li>นำ <span class="key">API Token</span> มากรอกลงในช่อง</li>
+      <li>กดปุ่ม <span class="ui">ตกลง</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ 4) EXAMPLES — ตัวอย่างจริง + ผลลัพธ์ ============ -->
+  <div class="card" id="s2">
+    <h3>💡 ตัวอย่างการใช้งาน</h3>
+    <p><b>โจทย์:</b> <!-- สิ่งที่ผู้ใช้อยากทำ --></p>
+    <div class="ex">
+      <h4>💻 โค้ด: Request Body</h4>
+      <pre><code>{
+  "message": "มีออเดอร์ใหม่!",
+  "group_id": "12345"
+}</code></pre>
+    </div>
+    <div class="note good"><b>✅ สิ่งที่เกิดขึ้น:</b> <!-- ผลลัพธ์ที่ผู้ใช้จะเห็น --></div>
+  </div>
+
+  <!-- ============ 5) TIPS & WARNINGS — ดักปัญหาที่มักพลาด ============ -->
+  <div class="card">
+    <h3>⚠️ ข้อควรระวัง &amp; เคล็ดลับ</h3>
+    <div class="note bad"><b>⚠️ ห้าม<!-- ข้อห้าม -->:</b> <!-- อธิบายว่าทำไมอันตราย --></div>
+    <div class="note warn"><b>👀 <!-- สถานการณ์ที่ต้องระวัง -->:</b> <!-- จะเกิดอะไรขึ้น + ทำยังไง --></div>
+    <div class="note good"><b>✅ เคล็ดลับ:</b> <!-- วิธีที่ดีที่สุด --></div>
+  </div>
+
+  <footer><!-- ชื่อคู่มือ --> • <!-- วันที่ --> • ทีม <!-- ผู้ดูแล --></footer>
+</div>
+
+</body>
+</html>

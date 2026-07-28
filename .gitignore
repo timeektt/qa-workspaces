@@ -1,0 +1,10 @@
+node_modules/
+.env
+
+# draft ที่ยังไม่ประมวลผล (ข้อมูล runtime — ไม่ track)
+agent-data/jira-drafts/intake/*
+agent-data/jira-drafts/reject/*
+!agent-data/jira-drafts/intake/.gitkeep
+!agent-data/jira-drafts/reject/.gitkeep
+
+.DS_Store
