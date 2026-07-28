@@ -28,6 +28,18 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 }
 #topbar h1 .tb-sub { font-size: 13px; font-weight: 400; color: #9fb0cc; }
 #tb-meta { display: flex; gap: 8px; align-items: center; }
+/* ซ้ายบน: ปุ่มกลับ + หัวข้อ อยู่ด้วยกัน */
+.tb-left { display: flex; align-items: center; gap: 14px; }
+/* ปุ่มกลับหน้าเลือก workspace (menu.html) — glassy บน hero มืด */
+.tb-back {
+  text-decoration: none; font-size: 13px; font-weight: 600; color: #cdd7e6;
+  padding: 6px 12px; border-radius: 8px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.tb-back:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(53,182,199,0.5); }
+.tb-back:focus-visible { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(53,182,199,0.35); }
 /* status/count READOUTS — squared, recessed panel + status dot (NOT a button) */
 
 /* jira view — standalone: โชว์ตลอด (ไม่มี mode switch) */

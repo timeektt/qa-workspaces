@@ -230,7 +230,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ---------- static: หน้า Jira ----------
-    const rel = pathname === '/' ? 'index.html' : pathname.replace(/^\//, '');
+    const rel = pathname === '/' ? 'menu.html' : pathname.replace(/^\//, '');
     const filePath = path.normalize(path.join(MAP_DIR, rel));
     if (!filePath.startsWith(MAP_DIR)) { res.writeHead(403); res.end('Forbidden'); return; }
     return sendFile(res, filePath);

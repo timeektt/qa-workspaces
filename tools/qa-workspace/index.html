@@ -5,13 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>QA Workspace — Jira</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231b2436'/><circle cx='16' cy='16' r='9' fill='none' stroke='%2322c39a' stroke-width='2.4'/><circle cx='16' cy='16' r='3' fill='%2322c39a'/></svg>" />
-  <link rel="stylesheet" href="jira.css?v=1" />
+  <link rel="stylesheet" href="jira.css?v=3" />
 </head>
 <body>
   <!-- class="jira-mode" คงไว้เสมอ: CSS โชว์ #jira-view เมื่อ #main มี class นี้ (standalone ไม่มี mode switch) -->
   <main id="main" class="jira-mode">
     <header id="topbar">
-      <h1>🐞 QA Workspace <span class="tb-sub">— Jira</span></h1>
+      <div class="tb-left">
+        <a href="menu.html" class="tb-back" title="กลับหน้าเลือก workspace">← เมนู</a>
+        <h1>🐞 QA Workspace <span class="tb-sub">— Jira</span></h1>
+      </div>
       <div id="tb-meta"></div>
     </header>
 
