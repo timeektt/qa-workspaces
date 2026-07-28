@@ -30,4 +30,5 @@ config มาจาก `.env` (โหลดอัตโนมัติตอน 
 
 ```bash
 npm start          # node tools/qa-workspace/server.js → http://localhost:3060
+                   # / = เมนูเลือก workspace · Jira tool อยู่ที่ /index.html
 ```
