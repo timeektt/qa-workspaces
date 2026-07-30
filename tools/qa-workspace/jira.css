@@ -53,7 +53,7 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 .jv-lede code { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.86em; background: color-mix(in srgb, var(--teal) 12%, #fff); color: #1f7c88; padding: 1px 5px; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--teal) 26%, #fff); }
 /* form controls ที่หน้า Intake ใช้ร่วม (select / ปุ่ม / note) */
 .jm-select { width: 100%; font: inherit; font-size: 13.5px; padding: 8px 10px; border: 1px solid #d3d9e6; border-radius: 8px; background: #fff; color: var(--navy); }
-.jm-btn { font: inherit; font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 9px; cursor: pointer; border: 1px solid; }
+.jm-btn { font: inherit; font-size: 14px; font-weight: 600; line-height: 1.35; padding: 9px 18px; border-radius: 9px; cursor: pointer; border: 1px solid; }
 .jm-btn.primary { background: var(--blue); color: #fff; border-color: color-mix(in srgb, var(--blue) 70%, #000); }
 .jm-btn.primary:hover { background: #2f6fd6; }
 .jm-btn.primary:disabled { opacity: 0.5; cursor: default; }
@@ -124,8 +124,8 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 #main.jira-mode .jin-text::placeholder { color: #a2a8b4; }
 #main.jira-mode .jin-text:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.26); }
 /* ปุ่ม primary → น้ำเงิน (สี primary/save มาตรฐาน + เข้ากับ teal eyebrow) */
-#main.jira-mode .jm-btn.primary { background: linear-gradient(135deg, #4a90f7, #3576e0); border-color: transparent; }
-#main.jira-mode .jm-btn.primary:hover { background: linear-gradient(135deg, #62a0f9, #3f80ea); box-shadow: 0 0 14px rgba(59,130,246,0.4); }
+#main.jira-mode .jm-btn.primary { background: linear-gradient(135deg, #3f83ea, #2c66cf); border-color: transparent; }
+#main.jira-mode .jm-btn.primary:hover { background: linear-gradient(135deg, #5695f2, #3773de); box-shadow: 0 0 14px rgba(59,130,246,0.4); }
 #main.jira-mode .jin-selects label, #main.jira-mode .jin-type-row label { color: #cdd4e0; }
 #main.jira-mode .jm-select {
   background: #2a2a2a; border-color: rgba(255,255,255,0.12); color: #e6eaf2;
