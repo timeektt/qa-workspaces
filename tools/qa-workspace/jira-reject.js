@@ -137,10 +137,12 @@
 
   function renderGroups(box, issues, browseBase, hasMore) {
     const today0 = startOfToday();
-    const week0 = today0 - 6 * 24 * 3600 * 1000; // 7 วันรวมวันนี้
+    const DAY = 24 * 3600 * 1000;
+    const monday0 = today0 - ((new Date().getDay() + 6) % 7) * DAY; // 00:00 วันจันทร์ของสัปดาห์นี้
+    const nextMonday0 = monday0 + 7 * DAY; // ขอบบน exclusive = 23:59:59.999 วันอาทิตย์
     const ts = (it) => { const t = Date.parse(it.created); return isNaN(t) ? 0 : t; };
     const today = issues.filter((it) => ts(it) >= today0);
-    const week = issues.filter((it) => ts(it) >= week0);
+    const week = issues.filter((it) => ts(it) >= monday0 && ts(it) < nextMonday0);
     const cards = (arr) => arr.map((it) => renderCard(it, browseBase)).join('');
     // กลุ่ม "ทั้งหมด": โชว์ LIST_PAGE ใบแรก + ปุ่มถ้ายังมีต่อ (hasMore) หรือโหลดมาเกิน LIST_PAGE แล้ว
     const allShowBtn = hasMore || issues.length > LIST_PAGE;
@@ -152,7 +154,7 @@
       const count = opts.count != null ? opts.count : arr.length;
       return `<div class="jrl-group"><h4 class="jrl-group-hd" role="button" tabindex="0"><span class="jrl-caret">▾</span> ${title} <span class="jrl-count">${count}</span></h4><div class="jrl-group-body">${body}</div></div>`;
     };
-    box.innerHTML = group('📅 วันนี้', today) + group('🗓 สัปดาห์นี้ (7 วัน)', week)
+    box.innerHTML = group('📅 วันนี้', today) + group('🗓 สัปดาห์นี้ (จ.–อา.)', week)
       + group('📋 ทั้งหมด', issues, { limited: true, showBtn: allShowBtn, count: allCount });
     wireCards(box);
     box.querySelectorAll('.jrl-group-hd').forEach((h) => {
