@@ -252,6 +252,20 @@ function mediaSingleNode(attachmentId, filePath, alt) {
   return { type: 'mediaSingle', attrs: { layout: 'center' }, content: [{ type: 'media', attrs }] };
 }
 
+// เดินทั้ง ADF (description/comment) ตั้งทุก mediaSingle เป็น layout=full-width (ภาพเต็มความกว้างคอลัมน์)
+// ใช้หลัง Jira แปลง wiki !name! → media UUID จริงแล้วเท่านั้น (attachment id ตรงๆ ตั้ง layout ไม่ได้)
+// คงเฉพาะ localId ไว้ ทิ้ง width/widthType (full-width ไม่ใช้) — คืนจำนวน node ที่แก้
+function mediaSinglesToFullWidth(node) {
+  if (!node || typeof node !== 'object') return 0;
+  let count = 0;
+  if (node.type === 'mediaSingle') {
+    node.attrs = { ...(node.attrs && node.attrs.localId ? { localId: node.attrs.localId } : {}), layout: 'full-width' };
+    count++;
+  }
+  if (Array.isArray(node.content)) for (const child of node.content) count += mediaSinglesToFullWidth(child);
+  return count;
+}
+
 // ---------- ADF builders (public) ----------
 /** body ธรรมดา (ไม่มีภาพ) — ใช้โดย import-feedback */
 function bodyToADF(lines) {
@@ -448,6 +462,15 @@ async function createDraftIssue(draft, opts = {}) {
     const wiki = bodyLinesToWiki(draft.bodyLines, attachedNames);
     const upd = await jira('PUT', `/rest/api/2/issue/${key}`, { fields: { description: wiki } });
     if (!upd.ok) imageErrors.push(`embed inline (v2) fail ${upd.status}`);
+    else {
+      // 4) ภาพเต็มความกว้าง: GET ADF (media เป็น UUID จริงหลังแปลง wiki) → full-width → PUT v3
+      const g = await jira('GET', `/rest/api/3/issue/${key}?fields=description`);
+      const doc = g.ok && g.json.fields && g.json.fields.description;
+      if (doc && mediaSinglesToFullWidth(doc)) {
+        const fw = await jira('PUT', `/rest/api/3/issue/${key}`, { fields: { description: doc } });
+        if (!fw.ok) imageErrors.push(`full-width fail ${fw.status}`);
+      }
+    }
   }
 
   return { key, url: `${base}/browse/${key}`, imageErrors };
@@ -709,6 +732,16 @@ async function addComment(key, bodyLines, opts = {}) {
     // v2 wiki เพื่อฝัง !filename! inline (ADF v3 ฝัง media UUID ไม่ได้)
     const wiki = bodyLinesToWiki(bodyLines, attachedNames);
     res = await jira('POST', `/rest/api/2/issue/${encodeURIComponent(key)}/comment`, { body: wiki });
+    // ภาพเต็มความกว้าง: GET comment ADF (media เป็น UUID จริง) → full-width → PUT v3
+    if (res.ok && res.json && res.json.id) {
+      const cid = res.json.id;
+      const g = await jira('GET', `/rest/api/3/issue/${encodeURIComponent(key)}/comment/${cid}`);
+      const doc = g.ok && g.json.body;
+      if (doc && mediaSinglesToFullWidth(doc)) {
+        const fw = await jira('PUT', `/rest/api/3/issue/${encodeURIComponent(key)}/comment/${cid}`, { body: doc });
+        if (!fw.ok) imageErrors.push(`full-width fail ${fw.status}`);
+      }
+    }
   } else {
     res = await jira('POST', `/rest/api/3/issue/${encodeURIComponent(key)}/comment`, { body: bodyToADF(bodyLines) });
   }
@@ -805,7 +838,7 @@ module.exports = {
   // qa reject
   listMyReportedIssues, rejectIssue,
   // adf
-  headerColor, bodyToADF, buildDraftDescriptionADF, bodyLinesToWiki, mediaSingleNode, pngSize,
+  headerColor, bodyToADF, buildDraftDescriptionADF, bodyLinesToWiki, mediaSingleNode, mediaSinglesToFullWidth, pngSize,
   // drafts
   parseDraftsMd, writeBackStatus, createDraftIssue, deleteDraft,
   // fuzzy
