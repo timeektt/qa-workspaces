@@ -254,15 +254,22 @@ function mediaSingleNode(attachmentId, filePath, alt) {
 
 // เดินทั้ง ADF (description/comment) ตั้งทุก mediaSingle เป็น layout=full-width (ภาพเต็มความกว้างคอลัมน์)
 // ใช้หลัง Jira แปลง wiki !name! → media UUID จริงแล้วเท่านั้น (attachment id ตรงๆ ตั้ง layout ไม่ได้)
-// คงเฉพาะ localId ไว้ ทิ้ง width/widthType (full-width ไม่ใช้) — คืนจำนวน node ที่แก้
-function mediaSinglesToFullWidth(node) {
+// dims = [{width,height}, …] ขนาดจริงของภาพเรียงตามลำดับที่ฝัง — จำเป็นเพราะ Jira แปลง wiki แล้ว
+//   ตั้ง media dims เป็น placeholder 200×183 (เกือบจตุรัส) พอ full-width frame สูงตามสัดส่วนผิด
+//   เกิดที่ว่างบน-ล่างภาพแนวนอน; set ขนาดจริงให้สัดส่วน frame ตรงภาพ. คงเฉพาะ localId — คืนจำนวน node ที่แก้
+function mediaSinglesToFullWidth(node, dims = [], cursor = { i: 0 }) {
   if (!node || typeof node !== 'object') return 0;
   let count = 0;
   if (node.type === 'mediaSingle') {
     node.attrs = { ...(node.attrs && node.attrs.localId ? { localId: node.attrs.localId } : {}), layout: 'full-width' };
+    const d = dims[cursor.i++];
+    if (d && d.width && d.height && node.content && node.content[0]) {
+      node.content[0].attrs.width = d.width;
+      node.content[0].attrs.height = d.height;
+    }
     count++;
   }
-  if (Array.isArray(node.content)) for (const child of node.content) count += mediaSinglesToFullWidth(child);
+  if (Array.isArray(node.content)) for (const child of node.content) count += mediaSinglesToFullWidth(child, dims, cursor);
   return count;
 }
 
@@ -444,6 +451,7 @@ async function createDraftIssue(draft, opts = {}) {
   // 2) upload ภาพเป็น attachment (โผล่ใน panel Attachments) + เก็บชื่อไฟล์ที่ขึ้นสำเร็จ
   const imageErrors = [];
   const attachedNames = [];
+  const attachedDims = []; // ขนาดจริงของภาพ (เรียงตาม attachedNames) ไว้ set media dims ตอน full-width
   const used = new Set(); // กันชื่อไฟล์ชนกันเองในชุด (issue เพิ่งสร้าง ยังไม่มี attachment เดิม)
   for (const rel of draft.images) {
     const abs = path.join(DRAFTS_DIR, rel);
@@ -454,6 +462,7 @@ async function createDraftIssue(draft, opts = {}) {
     const finalName = up.json[0].filename || name;
     used.add(finalName);
     attachedNames.push(finalName);
+    attachedDims.push(pngSize(abs));
   }
 
   // 3) embedInline: PUT คำอธิบายเป็น wiki markup (v2) ที่มี !filename! ฝังรูป inline ท้ายคำอธิบาย
@@ -466,7 +475,7 @@ async function createDraftIssue(draft, opts = {}) {
       // 4) ภาพเต็มความกว้าง: GET ADF (media เป็น UUID จริงหลังแปลง wiki) → full-width → PUT v3
       const g = await jira('GET', `/rest/api/3/issue/${key}?fields=description`);
       const doc = g.ok && g.json.fields && g.json.fields.description;
-      if (doc && mediaSinglesToFullWidth(doc)) {
+      if (doc && mediaSinglesToFullWidth(doc, attachedDims)) {
         const fw = await jira('PUT', `/rest/api/3/issue/${key}`, { fields: { description: doc } });
         if (!fw.ok) imageErrors.push(`full-width fail ${fw.status}`);
       }
@@ -716,6 +725,7 @@ async function addComment(key, bodyLines, opts = {}) {
   const images = opts.images || [];
   const imageErrors = [];
   const attachedNames = [];
+  const attachedDims = []; // ขนาดจริงของภาพ (เรียงตาม attachedNames) ไว้ set media dims ตอน full-width
   // กันชื่อไฟล์ชนกับ attachment เดิมของ issue — ไม่งั้น !filename! ใน wiki จะฝังรูปเก่าที่ชื่อซ้ำแทน
   const used = new Set(await getAttachmentNames(key));
   for (const abs of images) {
@@ -726,6 +736,7 @@ async function addComment(key, bodyLines, opts = {}) {
     const finalName = up.json[0].filename || name;
     used.add(finalName);
     attachedNames.push(finalName);
+    attachedDims.push(pngSize(abs));
   }
   let res;
   if (attachedNames.length) {
@@ -737,7 +748,7 @@ async function addComment(key, bodyLines, opts = {}) {
       const cid = res.json.id;
       const g = await jira('GET', `/rest/api/3/issue/${encodeURIComponent(key)}/comment/${cid}`);
       const doc = g.ok && g.json.body;
-      if (doc && mediaSinglesToFullWidth(doc)) {
+      if (doc && mediaSinglesToFullWidth(doc, attachedDims)) {
         const fw = await jira('PUT', `/rest/api/3/issue/${encodeURIComponent(key)}/comment/${cid}`, { body: doc });
         if (!fw.ok) imageErrors.push(`full-width fail ${fw.status}`);
       }
