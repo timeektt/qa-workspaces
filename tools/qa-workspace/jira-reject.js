@@ -1,7 +1,7 @@
 /* jira-reject.js — แท็บ "Jira List": ค้นหา/แสดงการ์ดที่เราสร้าง + เขียน reject intake ให้ Claude ประมวลต่อ */
 (function () {
   'use strict';
-  const { api, esc } = window.JCommon;
+  const { api, esc, setTabBadge } = window.JCommon;
   const $ = (id) => document.getElementById(id);
 
   let images = [];           // { name, dataUri } ของ reject form ปัจจุบัน
@@ -182,6 +182,7 @@
     const box = $('jrl-pending');
     const r = await api('/api/jira/rejects');
     const list = (r.ok && r.json.rejects) || [];
+    setTabBadge('list', list.length);
     if (!list.length) { box.innerHTML = '<p class="jm-note">— ยังไม่มี reject intake ค้าง —</p>'; return; }
     box.innerHTML = list.map((it) => {
       const preview = esc((it.reason || '').slice(0, 80)) + ((it.reason || '').length > 80 ? '…' : '');
@@ -236,5 +237,7 @@
       copyBtn.textContent = '✓ คัดลอกแล้ว';
       setTimeout(() => { copyBtn.textContent = LABEL; }, 1500);
     });
+
+    loadPending(); // โหลด badge จำนวน reject ค้างตั้งแต่เปิด (แท็บเริ่มที่ intake ไม่ได้เรียก loadPending ของ list เอง)
   };
 })();

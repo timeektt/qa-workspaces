@@ -73,5 +73,13 @@
     return (2 * inter) / total;
   }
 
-  window.JCommon = { api, esc, imgUrl, textRun, adfToHtml, dice };
+  // อัปเดต badge จำนวนรายการค้างบนปุ่มแท็บ (intake/list) — ซ่อนเมื่อ 0
+  function setTabBadge(tab, n) {
+    const el = document.getElementById('jv-badge-' + tab);
+    if (!el) return;
+    el.textContent = n > 99 ? '99+' : String(n);
+    el.hidden = !n;
+  }
+
+  window.JCommon = { api, esc, imgUrl, textRun, adfToHtml, dice, setTabBadge };
 })();

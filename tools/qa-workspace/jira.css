@@ -148,6 +148,8 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 .jv-tab { font: inherit; font-size: 14px; font-weight: 600; padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; color: #9aa1af; cursor: pointer; margin-bottom: -1px; }
 .jv-tab:hover { color: #cdd4e0; }
 .jv-tab.active { color: #fff; border-bottom-color: #4a90f7; }
+.jv-tab-badge { display: inline-block; min-width: 18px; padding: 0 6px; margin-left: 4px; border-radius: 9px; background: #e5484d; color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; vertical-align: middle; }
+.jv-tab-badge[hidden] { display: none; }
 
 /* --- Jira List: search + result --- */
 .jrl-search { display: flex; gap: 10px; margin: 4px 0 12px; }

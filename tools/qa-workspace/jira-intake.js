@@ -1,7 +1,7 @@
 /* jira-intake.js — Intake sub-tab: จับ text+รูปดิบ ส่งเข้า store ให้ Claude ประมวลต่อ */
 (function () {
   'use strict';
-  const { api, esc } = window.JCommon;
+  const { api, esc, setTabBadge } = window.JCommon;
   const $ = (id) => document.getElementById(id);
   let images = []; // { name, dataUri }
   let editingStamp = null; // stamp ของ intake ที่กำลังแก้ไข (null = โหมดสร้างใหม่)
@@ -135,6 +135,7 @@
   async function loadPending() {
     const r = await api('/api/jira/intakes');
     const list = (r.ok && r.json.intakes) || [];
+    setTabBadge('intake', list.length);
     if (!list.length) { $('jin-pending').innerHTML = '<p class="jm-note">— ยังไม่มี intake ค้าง —</p>'; return; }
     $('jin-pending').innerHTML = list.map((it) => {
       const preview = esc((it.text || '').slice(0, 80)) + ((it.text || '').length > 80 ? '…' : '');
