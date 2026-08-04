@@ -57,7 +57,8 @@
   async function addFiles(fileList) {
     const rejected = [];
     for (const f of fileList) {
-      if (!ALLOWED_EXT.has(extOf(f.name))) { rejected.push(`${f.name} (ชนิดไม่รองรับ)`); continue; }
+      const okType = ALLOWED_EXT.has(extOf(f.name)) || (f.type && f.type.startsWith('image/'));
+      if (!okType) { rejected.push(`${f.name || 'clipboard'} (ชนิดไม่รองรับ)`); continue; }
       if (f.size > MAX_BYTES) { rejected.push(`${f.name} (เกิน 25MB)`); continue; }
       const dataUri = await fileToDataUri(f);
       images.push({ name: f.name || `paste-${images.length + 1}.png`, dataUri, size: f.size });
