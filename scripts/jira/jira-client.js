@@ -243,6 +243,48 @@ function pngSize(filePath) {
   } catch { return null; }
 }
 
+// ---------- attachment type helpers ----------
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp']);
+function isImageFile(name) {
+  return IMAGE_EXTS.has(path.extname(String(name || '')).slice(1).toLowerCase());
+}
+// บรรทัด/โหนดชี้ไฟล์เอกสาร (ไม่ใช่รูป) → แนบเป็น attachment เท่านั้น ฝัง inline ไม่ได้
+function docPointerNode(docNames) {
+  return {
+    type: 'paragraph',
+    content: [{
+      type: 'text',
+      text: `📎 ไฟล์แนบ ${docNames.length} ไฟล์ (${docNames.join(', ')}) — ดูใน Attachments ของ issue นี้`,
+      marks: [{ type: 'em' }],
+    }],
+  };
+}
+function docPointerWikiLine(docNames) {
+  return `📎 ไฟล์แนบ: ${docNames.join(', ')}`;
+}
+
+// ---------- Task 2: decodeDataUri + MAX_ATTACH_BYTES ----------
+const MAX_ATTACH_BYTES = 25 * 1024 * 1024;
+// map mime → นามสกุล (ใช้ตอน name ไม่มีนามสกุล)
+const MIME_EXT = {
+  'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp',
+  'image/svg+xml': 'svg', 'image/bmp': 'bmp', 'application/pdf': 'pdf',
+  'text/csv': 'csv', 'text/plain': 'txt', 'application/zip': 'zip',
+};
+function decodeDataUri(dataUri, name) {
+  const m = /^data:([^;,]+);base64,(.+)$/.exec(dataUri || '');
+  if (!m) return { error: 'รูปแบบ data URI ไม่ถูกต้อง' };
+  let buffer;
+  try { buffer = Buffer.from(m[2], 'base64'); } catch { return { error: 'ถอด base64 ไม่ได้' }; }
+  if (buffer.length > MAX_ATTACH_BYTES) return { error: 'ไฟล์ใหญ่เกิน 25MB' };
+  let finalName = path.basename(String(name || '')).replace(/^\.+$/, '');
+  if (!finalName || !path.extname(finalName)) {
+    const ext = MIME_EXT[m[1]] || 'bin';
+    finalName = `${finalName || Date.now()}.${ext}`;
+  }
+  return { name: finalName, buffer };
+}
+
 // สร้าง mediaSingle node จาก attachment id (+ ขนาดถ้ารู้)
 function mediaSingleNode(attachmentId, filePath, alt) {
   const size = filePath ? pngSize(filePath) : null;
@@ -400,7 +442,7 @@ function attachmentPointerNode(images) {
     type: 'paragraph',
     content: [{
       type: 'text',
-      text: `📎 ภาพประกอบ ${images.length} ไฟล์ (${names}) — ดูใน Attachments ของ issue นี้`,
+      text: `📎 ไฟล์แนบ ${images.length} ไฟล์ (${names}) — ดูใน Attachments ของ issue นี้`,
       marks: [{ type: 'em' }],
     }],
   };
@@ -419,8 +461,12 @@ async function createDraftIssue(draft, opts = {}) {
   const summary = draft.summary.length > 255 ? draft.summary.slice(0, 252) + '…' : draft.summary;
 
   const description = buildDraftDescriptionADF(draft.bodyLines, []);
-  // embedInline: จะ PUT คำอธิบายใหม่เป็น wiki (v2) หลัง attach — ไม่ต้องใส่ text pointer
-  if (draft.images.length && !embedInline) description.content.push(attachmentPointerNode(draft.images));
+  const imgFiles = draft.images.filter(isImageFile);
+  const docFiles = draft.images.filter((n) => !isImageFile(n));
+  // รูป: pointer เฉพาะเมื่อไม่ embed inline (embed จะ PUT wiki ทับทีหลัง)
+  if (imgFiles.length && !embedInline) description.content.push(attachmentPointerNode(imgFiles));
+  // เอกสาร: ไม่มีทางฝัง inline → pointer เสมอ (ถ้า embedInline+มีรูป จะถูก wiki ทับด้วยบรรทัด docPointerWikiLine แทน)
+  if (docFiles.length && !(embedInline && imgFiles.length)) description.content.push(docPointerNode(docFiles.map((r) => path.basename(r))));
 
   const sprintVal = sprintId === undefined ? null : sprintId; // undefined = ไม่ระบุจาก caller
   const issueType = draft.type === 'Improvement' ? 'Improvement' : 'Bug';
@@ -467,19 +513,36 @@ async function createDraftIssue(draft, opts = {}) {
 
   // 3) embedInline: PUT คำอธิบายเป็น wiki markup (v2) ที่มี !filename! ฝังรูป inline ท้ายคำอธิบาย
   //    (attachment ต้องมีก่อน จึงทำหลัง upload; Jira แปลง wiki→ADF map รูปด้วยชื่อไฟล์)
-  if (embedInline && attachedNames.length) {
-    const wiki = bodyLinesToWiki(draft.bodyLines, attachedNames);
+  // แยก: รูปฝัง inline ได้ · เอกสารแนบเป็น attachment เท่านั้น
+  const attachedImageNames = attachedNames.filter(isImageFile);
+  const attachedDocNames = attachedNames.filter((n) => !isImageFile(n));
+  const imageDims = attachedNames
+    .map((n, idx) => ({ n, d: attachedDims[idx] }))
+    .filter((x) => isImageFile(x.n))
+    .map((x) => x.d);
+
+  // embedInline: PUT คำอธิบายเป็น wiki (v2) ฝัง !filename! เฉพาะรูป + บรรทัดชี้เอกสาร
+  if (embedInline && attachedImageNames.length) {
+    let wiki = bodyLinesToWiki(draft.bodyLines, attachedImageNames);
+    if (attachedDocNames.length) wiki += `\n\n${docPointerWikiLine(attachedDocNames)}`;
     const upd = await jira('PUT', `/rest/api/2/issue/${key}`, { fields: { description: wiki } });
     if (!upd.ok) imageErrors.push(`embed inline (v2) fail ${upd.status}`);
     else {
       // 4) ภาพเต็มความกว้าง: GET ADF (media เป็น UUID จริงหลังแปลง wiki) → full-width → PUT v3
       const g = await jira('GET', `/rest/api/3/issue/${key}?fields=description`);
       const doc = g.ok && g.json.fields && g.json.fields.description;
-      if (doc && mediaSinglesToFullWidth(doc, attachedDims)) {
+      if (doc && mediaSinglesToFullWidth(doc, imageDims)) {
         const fw = await jira('PUT', `/rest/api/3/issue/${key}`, { fields: { description: doc } });
         if (!fw.ok) imageErrors.push(`full-width fail ${fw.status}`);
       }
     }
+  } else if (embedInline && attachedDocNames.length && !attachedImageNames.length) {
+    // embedInline แต่รูป upload ไม่สำเร็จเลย (มีแต่เอกสาร) → wiki block ไม่ทำงาน
+    // PUT คำอธิบาย ADF ใหม่ให้มีโหนดชี้เอกสาร (ไม่งั้นเอกสารแนบอยู่แต่ไม่มีข้อความอ้างถึง)
+    const adf = buildDraftDescriptionADF(draft.bodyLines, []);
+    adf.content.push(docPointerNode(attachedDocNames));
+    const upd = await jira('PUT', `/rest/api/3/issue/${key}`, { fields: { description: adf } });
+    if (!upd.ok) imageErrors.push(`doc pointer update fail ${upd.status}`);
   }
 
   return { key, url: `${base}/browse/${key}`, imageErrors };
@@ -738,21 +801,32 @@ async function addComment(key, bodyLines, opts = {}) {
     attachedNames.push(finalName);
     attachedDims.push(pngSize(abs));
   }
+  const attachedImageNames = attachedNames.filter(isImageFile);
+  const attachedDocNames = attachedNames.filter((n) => !isImageFile(n));
+  const imageDims = attachedNames
+    .map((n, idx) => ({ n, d: attachedDims[idx] }))
+    .filter((x) => isImageFile(x.n))
+    .map((x) => x.d);
   let res;
-  if (attachedNames.length) {
-    // v2 wiki เพื่อฝัง !filename! inline (ADF v3 ฝัง media UUID ไม่ได้)
-    const wiki = bodyLinesToWiki(bodyLines, attachedNames);
+  if (attachedImageNames.length) {
+    // v2 wiki ฝัง !filename! เฉพาะรูป + บรรทัดชี้เอกสาร
+    let wiki = bodyLinesToWiki(bodyLines, attachedImageNames);
+    if (attachedDocNames.length) wiki += `\n\n${docPointerWikiLine(attachedDocNames)}`;
     res = await jira('POST', `/rest/api/2/issue/${encodeURIComponent(key)}/comment`, { body: wiki });
-    // ภาพเต็มความกว้าง: GET comment ADF (media เป็น UUID จริง) → full-width → PUT v3
     if (res.ok && res.json && res.json.id) {
       const cid = res.json.id;
       const g = await jira('GET', `/rest/api/3/issue/${encodeURIComponent(key)}/comment/${cid}`);
       const doc = g.ok && g.json.body;
-      if (doc && mediaSinglesToFullWidth(doc, attachedDims)) {
+      if (doc && mediaSinglesToFullWidth(doc, imageDims)) {
         const fw = await jira('PUT', `/rest/api/3/issue/${encodeURIComponent(key)}/comment/${cid}`, { body: doc });
         if (!fw.ok) imageErrors.push(`full-width fail ${fw.status}`);
       }
     }
+  } else if (attachedDocNames.length) {
+    // มีแต่เอกสาร (ไม่มีรูป) → comment ADF ปกติ + โหนดชี้เอกสาร
+    const adf = bodyToADF(bodyLines);
+    adf.content.push(docPointerNode(attachedDocNames));
+    res = await jira('POST', `/rest/api/3/issue/${encodeURIComponent(key)}/comment`, { body: adf });
   } else {
     res = await jira('POST', `/rest/api/3/issue/${encodeURIComponent(key)}/comment`, { body: bodyToADF(bodyLines) });
   }
@@ -905,6 +979,8 @@ module.exports = {
   listMyReportedIssues, listAllVisibleIssues, listProjectKeys, findIssuesByNumber, rejectIssue,
   // adf
   headerColor, bodyToADF, buildDraftDescriptionADF, bodyLinesToWiki, mediaSingleNode, mediaSinglesToFullWidth, pngSize,
+  // attachment type helpers
+  isImageFile, docPointerNode, docPointerWikiLine, decodeDataUri, MAX_ATTACH_BYTES,
   // drafts
   parseDraftsMd, writeBackStatus, createDraftIssue, deleteDraft,
   // fuzzy

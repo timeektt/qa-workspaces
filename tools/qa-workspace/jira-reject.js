@@ -4,8 +4,23 @@
   const { api, esc, setTabBadge } = window.JCommon;
   const $ = (id) => document.getElementById(id);
 
-  let images = [];           // { name, dataUri } ของ reject form ปัจจุบัน
+  let images = [];           // { name, dataUri, size } ของ reject form ปัจจุบัน
   let modalCtx = null;       // { issueKey, issueSummary, editStamp } ระหว่างเปิด modal
+
+  const ALLOWED_EXT = new Set(['png','jpg','jpeg','gif','webp','svg','bmp','pdf','xls','xlsx','csv','doc','docx','txt','zip']);
+  const IMAGE_EXT = new Set(['png','jpg','jpeg','gif','webp','svg','bmp']);
+  const MAX_BYTES = 25 * 1024 * 1024;
+  const extOf = (n) => (String(n).split('.').pop() || '').toLowerCase();
+  const isImg = (n) => IMAGE_EXT.has(extOf(n));
+  const fileIcon = (n) => {
+    const e = extOf(n);
+    if (e === 'pdf') return '📄';
+    if (['xls','xlsx','csv'].includes(e)) return '📊';
+    if (['doc','docx','txt'].includes(e)) return '📝';
+    if (e === 'zip') return '🗜';
+    return '📎';
+  };
+  const humanSize = (b) => b >= 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.max(1,Math.round(b/1024))+' KB';
 
   let searchTimer = null;    // debounce ช่อง search (autosearch)
   let listPageToken = null;  // cursor สำหรับ "โหลดเพิ่ม" กลุ่มทั้งหมด
@@ -29,18 +44,26 @@
     });
   }
   function renderThumbs() {
-    $('jrj-thumbs').innerHTML = images.map((im, i) =>
-      `<div class="jin-thumb"><img src="${im.dataUri}" alt="${esc(im.name)}" data-i="${i}"><button class="jin-rm" data-i="${i}" title="ลบรูป">✕</button></div>`).join('');
+    $('jrj-thumbs').innerHTML = images.map((im, i) => {
+      if (isImg(im.name)) {
+        return `<div class="jin-thumb"><img src="${im.dataUri}" alt="${esc(im.name)}" data-i="${i}"><button class="jin-rm" data-i="${i}" title="ลบไฟล์">✕</button></div>`;
+      }
+      const size = im.size ? humanSize(im.size) : '';
+      return `<div class="jin-file-chip"><span class="fc-ic">${fileIcon(im.name)}</span><span class="fc-meta"><span class="fc-name" title="${esc(im.name)}">${esc(im.name)}</span><span class="fc-size">${esc(size)}</span></span><button class="jin-rm" data-i="${i}" title="ลบไฟล์">✕</button></div>`;
+    }).join('');
     $('jrj-thumbs').querySelectorAll('.jin-rm').forEach((b) =>
-      b.addEventListener('click', () => { images.splice(+b.dataset.i, 1); renderThumbs(); }));
+      b.addEventListener('click', (e) => { e.stopPropagation(); images.splice(+b.dataset.i, 1); renderThumbs(); }));
   }
   async function addFiles(fileList) {
+    const rejected = [];
     for (const f of fileList) {
-      if (!f.type.startsWith('image/')) continue;
+      if (!ALLOWED_EXT.has(extOf(f.name))) { rejected.push(`${f.name} (ชนิดไม่รองรับ)`); continue; }
+      if (f.size > MAX_BYTES) { rejected.push(`${f.name} (เกิน 25MB)`); continue; }
       const dataUri = await fileToDataUri(f);
-      images.push({ name: f.name || `paste-${images.length + 1}.png`, dataUri });
+      images.push({ name: f.name || `paste-${images.length + 1}.png`, dataUri, size: f.size });
     }
     renderThumbs();
+    if (rejected.length && $('jrj-note')) $('jrj-note').textContent = '✗ ข้ามไฟล์: ' + rejected.join(', ');
   }
 
   // ---------- status badge ----------
@@ -238,6 +261,12 @@
     drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag'); });
     drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
     drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('drag'); addFiles(e.dataTransfer.files); });
+
+    const fileInput = $('jrj-file-input');
+    drop.addEventListener('click', () => fileInput.click());
+    drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+    fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
+
     document.addEventListener('paste', (e) => {
       if ($('jrj-modal').hidden) return; // รับ paste เฉพาะตอน modal เปิด
       const files = [...(e.clipboardData?.files || [])];

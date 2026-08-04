@@ -43,17 +43,14 @@ function sendFile(res, filePath) {
   fs.createReadStream(filePath).pipe(res);
 }
 
-// ถอด data URI ของรูปจาก payload → buffer (ใช้ทั้งตอนสร้างและแก้ไข intake/reject)
+// ถอด data URI ของไฟล์แนบจาก payload → buffer (รับทั้งรูปและเอกสาร; ตรรกะแกนอยู่ที่ JC.decodeDataUri)
 function decodeImages(images) {
   const decoded = [];
   const warnings = [];
   (Array.isArray(images) ? images : []).forEach((img, i) => {
-    const m = /^data:(image\/\w+);base64,(.+)$/.exec(img.dataUri || '');
-    if (!m) { warnings.push(`รูปที่ ${i + 1} รูปแบบไม่ถูกต้อง`); return; }
-    try {
-      const ext = m[1].split('/')[1].replace('jpeg', 'jpg');
-      decoded.push({ name: img.name || `${i + 1}.${ext}`, buffer: Buffer.from(m[2], 'base64') });
-    } catch { warnings.push(`รูปที่ ${i + 1} ถอดไม่ได้`); }
+    const r = JC.decodeDataUri(img.dataUri || '', img.name);
+    if (r.error) { warnings.push(`ไฟล์ที่ ${i + 1} ${r.error}`); return; }
+    decoded.push({ name: r.name, buffer: r.buffer });
   });
   return { decoded, warnings };
 }
