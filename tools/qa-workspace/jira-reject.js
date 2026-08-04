@@ -7,6 +7,9 @@
   let images = [];           // { name, dataUri } ของ reject form ปัจจุบัน
   let modalCtx = null;       // { issueKey, issueSummary, editStamp } ระหว่างเปิด modal
 
+  let searchTimer = null;    // debounce ช่อง search (autosearch)
+  let listPageToken = null;  // cursor สำหรับ "โหลดเพิ่ม" กลุ่มทั้งหมด
+
   // ---------- tabs ----------
   function switchTab(name) {
     document.querySelectorAll('.jv-tab').forEach((b) => b.classList.toggle('active', b.dataset.jtab === name));
@@ -95,18 +98,21 @@
     }
   }
 
-  // ---------- search ----------
+  // ---------- search (autosearch: พิมพ์ key/url/เลขล้วน แล้วค้นเอง ไม่ต้องกดปุ่ม) ----------
   async function doSearch() {
     const q = $('jrl-q').value.trim();
     const box = $('jrl-search-result');
     if (!q) { box.innerHTML = ''; return; }
     box.innerHTML = '<p class="jm-note">⏳ กำลังค้นหา…</p>';
     const r = await api(`/api/jira/issue?q=${encodeURIComponent(q)}`);
-    if (!r.ok || !r.json.issue) {
-      box.innerHTML = `<p class="jrl-notfound">✗ ${esc((r.json && r.json.error) || 'ไม่พบข้อมูล / ไม่มี Card นี้')}</p>`;
+    if (q !== $('jrl-q').value.trim()) return; // ค่าเปลี่ยนระหว่างรอผล — ทิ้งผลเก่า กันแสดงข้ามคำ
+    if (!r.ok) {
+      box.innerHTML = `<p class="jrl-notfound">✗ ${esc((r.json && r.json.error) || 'ค้นหาไม่สำเร็จ')}</p>`;
       return;
     }
-    box.innerHTML = renderCard(r.json.issue, r.json.browseBase);
+    const issues = (r.json && r.json.issues) || [];
+    if (!issues.length) { box.innerHTML = `<p class="jrl-notfound">✗ ไม่พบการ์ด (พิมพ์เลขการ์ด, key หรือ url)</p>`; return; }
+    box.innerHTML = issues.map((it) => renderCard(it, r.json.browseBase)).join('');
     wireCards(box);
   }
 
@@ -124,18 +130,18 @@
   }
   function startOfToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
 
-  const LIST_PAGE = 50; // จำนวนที่แสดงก่อนในกลุ่ม "ทั้งหมด" — ที่เหลือโหลดตอนกด "ดูทั้งหมด"
-
   async function loadList() {
     const box = $('jrl-list');
     box.innerHTML = '<p class="jm-note">⏳ กำลังโหลดรายการจาก Jira…</p>';
-    // โหลดหน้าแรกก่อน (100 ใบ) — เร็ว ไม่ดึง 800+ รวด
+    listPageToken = null;
+    // หน้าแรก 100 ใบ (ทุก project เรียงสร้างล่าสุด) — พอสำหรับกลุ่มวันนี้/สัปดาห์นี้ · "ทั้งหมด" โหลดเพิ่มด้วย cursor
     const r = await api('/api/jira/my-issues');
     if (!r.ok) { box.innerHTML = `<p class="jrl-notfound">✗ ${esc((r.json && r.json.error) || 'โหลดไม่สำเร็จ')}</p>`; return; }
-    renderGroups(box, r.json.issues || [], r.json.browseBase || '', !!r.json.hasMore);
+    renderGroups(box, r.json.issues || [], r.json.browseBase || '', r.json.nextPageToken || null);
   }
 
-  function renderGroups(box, issues, browseBase, hasMore) {
+  function renderGroups(box, issues, browseBase, nextToken) {
+    listPageToken = nextToken;
     const today0 = startOfToday();
     const DAY = 24 * 3600 * 1000;
     const monday0 = today0 - ((new Date().getDay() + 6) % 7) * DAY; // 00:00 วันจันทร์ของสัปดาห์นี้
@@ -144,37 +150,40 @@
     const today = issues.filter((it) => ts(it) >= today0);
     const week = issues.filter((it) => ts(it) >= monday0 && ts(it) < nextMonday0);
     const cards = (arr) => arr.map((it) => renderCard(it, browseBase)).join('');
-    // กลุ่ม "ทั้งหมด": โชว์ LIST_PAGE ใบแรก + ปุ่มถ้ายังมีต่อ (hasMore) หรือโหลดมาเกิน LIST_PAGE แล้ว
-    const allShowBtn = hasMore || issues.length > LIST_PAGE;
-    const allCount = hasMore ? `${issues.length}+` : String(issues.length);
-    const group = (title, arr, opts = {}) => {
-      const shown = opts.limited ? arr.slice(0, LIST_PAGE) : arr;
-      const more = opts.showBtn ? `<button class="jrl-showall jm-btn ghost">▾ ดูทั้งหมด</button>` : '';
-      const body = arr.length ? cards(shown) + more : '<p class="jm-note">— ไม่มี —</p>';
-      const count = opts.count != null ? opts.count : arr.length;
-      return `<div class="jrl-group"><h4 class="jrl-group-hd" role="button" tabindex="0"><span class="jrl-caret">▾</span> ${title} <span class="jrl-count">${count}</span></h4><div class="jrl-group-body">${body}</div></div>`;
+    const group = (title, arr) => {
+      const body = arr.length ? cards(arr) : '<p class="jm-note">— ไม่มี —</p>';
+      return `<div class="jrl-group"><h4 class="jrl-group-hd" role="button" tabindex="0"><span class="jrl-caret">▾</span> ${title} <span class="jrl-count">${arr.length}</span></h4><div class="jrl-group-body">${body}</div></div>`;
     };
-    box.innerHTML = group('📅 วันนี้', today) + group('🗓 สัปดาห์นี้ (จ.–อา.)', week)
-      + group('📋 ทั้งหมด', issues, { limited: true, showBtn: allShowBtn, count: allCount });
+    // กลุ่ม "ทั้งหมด" — cursor pagination: โชว์ที่โหลดมา + ปุ่ม "โหลดเพิ่ม" ต่อท้ายถ้ายังมีหน้า
+    const loadMore = nextToken ? `<button class="jrl-loadmore jm-btn ghost">▾ โหลดเพิ่ม</button>` : '';
+    const allBody = issues.length ? cards(issues) : '<p class="jm-note">— ไม่มี —</p>';
+    const allGroup = `<div class="jrl-group"><h4 class="jrl-group-hd" role="button" tabindex="0"><span class="jrl-caret">▾</span> 📋 ทั้งหมด <span class="jrl-count">${issues.length}${nextToken ? '+' : ''}</span></h4><div class="jrl-group-body"><div class="jrl-all-cards">${allBody}</div>${loadMore}</div></div>`;
+    box.innerHTML = group('📅 วันนี้', today) + group('🗓 สัปดาห์นี้ (จ.–อา.)', week) + allGroup;
     wireCards(box);
     box.querySelectorAll('.jrl-group-hd').forEach((h) => {
       const toggle = () => h.parentElement.classList.toggle('collapsed');
       h.addEventListener('click', toggle);
       h.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
     });
-    // ปุ่ม "ดูทั้งหมด" — ตอนนี้ค่อยดึงทุกใบจาก Jira (?all=1) แล้ว render + อัปเดตตัวเลข
-    box.querySelectorAll('.jrl-showall').forEach((b) => b.addEventListener('click', async (e) => {
+    // "โหลดเพิ่ม" — ดึงหน้าถัดไปด้วย cursor token แล้วต่อท้ายกลุ่ม "ทั้งหมด"
+    const btn = box.querySelector('.jrl-loadmore');
+    if (btn) btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const body = b.parentElement;
-      b.textContent = '⏳ กำลังโหลดทั้งหมด…'; b.disabled = true;
-      const rr = await api('/api/jira/my-issues?all=1');
-      if (!rr.ok) { b.textContent = '✗ โหลดไม่สำเร็จ — ลองใหม่'; b.disabled = false; return; }
-      const all = rr.json.issues || [];
-      body.innerHTML = cards(all);
-      wireCards(body);
-      const badge = body.parentElement.querySelector('.jrl-count');
-      if (badge) badge.textContent = all.length;
-    }));
+      if (!listPageToken) return;
+      btn.textContent = '⏳ กำลังโหลด…'; btn.disabled = true;
+      const rr = await api(`/api/jira/my-issues?pageToken=${encodeURIComponent(listPageToken)}`);
+      if (!rr.ok) { btn.textContent = '✗ โหลดไม่สำเร็จ — ลองใหม่'; btn.disabled = false; return; }
+      const more = rr.json.issues || [];
+      const cardsWrap = btn.parentElement.querySelector('.jrl-all-cards');
+      cardsWrap.insertAdjacentHTML('beforeend', cards(more));
+      wireCards(cardsWrap);
+      listPageToken = rr.json.nextPageToken || null;
+      const shown = cardsWrap.querySelectorAll('.jrl-card').length;
+      const badge = btn.closest('.jrl-group').querySelector('.jrl-count');
+      if (badge) badge.textContent = `${shown}${listPageToken ? '+' : ''}`;
+      if (listPageToken) { btn.textContent = '▾ โหลดเพิ่ม'; btn.disabled = false; }
+      else btn.remove();
+    });
   }
 
   // ---------- pending reject intakes ----------
@@ -209,9 +218,16 @@
 
     document.querySelectorAll('.jv-tab').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.jtab)));
 
-    $('jrl-search-btn').addEventListener('click', doSearch);
-    $('jrl-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
     $('jrl-refresh').addEventListener('click', () => { loadList(); loadPending(); });
+
+    // autosearch — พิมพ์แล้ว debounce 350ms ค่อยยิง (ไม่มีปุ่มค้นหา) · Enter = ค้นทันที
+    const q = $('jrl-q');
+    q.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      if (!q.value.trim()) { $('jrl-search-result').innerHTML = ''; return; }
+      searchTimer = setTimeout(doSearch, 350);
+    });
+    q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); doSearch(); } });
 
     $('jrj-save').addEventListener('click', saveReject);
     $('jrj-cancel').addEventListener('click', closeModal);

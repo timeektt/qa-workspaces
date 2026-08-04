@@ -517,13 +517,12 @@ function resolveComponentFuzzy(target, components, threshold = 0.5) {
   return bestScore >= threshold ? best : null;
 }
 
-// แปลง input ช่อง search (key เปล่า / url เต็ม / เลขล้วน) → issue key ตัวใหญ่ · คืน '' ถ้า parse ไม่ได้
+// แปลง input ช่อง search (key เปล่า / url เต็ม) → issue key ตัวใหญ่ ทุก project · คืน '' ถ้าไม่ใช่รูป key
+// เลขล้วน (2023) ไม่แปลงที่นี่ — endpoint จัดการแยก (หาเลขนั้นในทุก project)
 function parseIssueKey(raw) {
   const s = String(raw || '').trim();
-  const m = s.match(/([A-Za-z][A-Za-z0-9_]+-\d+)/); // ABC-1979 หรือใน .../browse/ABC-1979
-  if (m) return m[1].toUpperCase();
-  if (/^\d+$/.test(s)) return `${JIRA_PROJECT_KEY}-${s}`; // เลขล้วน "1979" → เติม project key
-  return '';
+  const m = s.match(/([A-Za-z][A-Za-z0-9_]+-\d+)/); // ABC-123 หรือใน .../browse/ABC-123 (ทุก project)
+  return m ? m[1].toUpperCase() : '';
 }
 
 // ---------- intake store ----------
@@ -708,6 +707,7 @@ async function getIssue(key, fields = ['summary', 'description', 'status', 'prio
     key: r.json.key,
     summary: f.summary || '',
     status: f.status && f.status.name,
+    statusCategory: f.status && f.status.statusCategory && f.status.statusCategory.key,
     priority: f.priority && f.priority.name,
     issuetype: f.issuetype && f.issuetype.name,
     components: (f.components || []).map(c => ({ id: c.id, name: c.name })),
@@ -806,6 +806,61 @@ async function listMyReportedIssues(max = 2000) {
 }
 
 /**
+ * list ทุกใบที่บัญชี .env มีสิทธิ์เห็น (ทุก project) เรียงตามวันที่สร้างล่าสุด
+ * pagination แบบ cursor: ส่ง pageToken (จากรอบก่อน) เพื่อโหลดหน้าถัดไป
+ * คืน { ok, issues, nextPageToken } — nextPageToken=null คือหมดแล้ว
+ */
+async function listAllVisibleIssues({ pageToken, max = 100 } = {}) {
+  // Jira ห้าม JQL ไม่มีเงื่อนไข → bound ด้วย project in (ทุก project ที่เห็นได้)
+  const pk = await listProjectKeys();
+  if (!pk.ok) return { ok: false, status: pk.status, error: pk.error, issues: [] };
+  if (!pk.keys.length) return { ok: true, issues: [], nextPageToken: null };
+  const jql = `project in (${pk.keys.map((k) => `"${k}"`).join(',')}) ORDER BY created DESC`;
+  const body = { jql, maxResults: max, fields: ['summary', 'status', 'created'] };
+  if (pageToken) body.nextPageToken = pageToken;
+  const r = await jira('POST', '/rest/api/3/search/jql', body);
+  if (!r.ok) return { ok: false, status: r.status, error: r.json, issues: [] };
+  const issues = (r.json.issues || []).map((it) => ({
+    key: it.key,
+    summary: it.fields.summary || '',
+    status: it.fields.status && it.fields.status.name,
+    statusCategory: it.fields.status && it.fields.status.statusCategory && it.fields.status.statusCategory.key,
+    created: it.fields.created || '',
+  }));
+  return { ok: true, issues, nextPageToken: r.json.isLast ? null : (r.json.nextPageToken || null) };
+}
+
+/** list key ของทุก project ที่บัญชี .env เห็นได้ (paginate /project/search) */
+async function listProjectKeys() {
+  const keys = [];
+  let startAt = 0;
+  for (;;) {
+    const r = await jira('GET', `/rest/api/3/project/search?maxResults=50&startAt=${startAt}`);
+    if (!r.ok) return { ok: false, status: r.status, error: r.json, keys };
+    for (const p of (r.json.values || [])) if (p.key) keys.push(p.key);
+    if (r.json.isLast || !(r.json.values || []).length) break;
+    startAt += (r.json.values || []).length;
+  }
+  return { ok: true, keys };
+}
+
+/**
+ * เลขล้วน (เช่น 2023) → หาทุกใบที่ลงท้ายเลขนั้นในทุก project ที่เห็นได้
+ * ไล่ getIssue ทีละ ${projectKey}-${num} แบบขนาน แล้วเก็บเฉพาะใบที่มีจริง
+ * คืน { ok, issues } เรียงตาม project key
+ */
+async function findIssuesByNumber(num) {
+  const pk = await listProjectKeys();
+  if (!pk.ok) return { ok: false, status: pk.status, error: pk.error, issues: [] };
+  const results = await Promise.all(pk.keys.map(async (k) => {
+    const iss = await getIssue(`${k}-${num}`, ['summary', 'status']);
+    return iss.ok ? { key: iss.key, summary: iss.summary, status: iss.status, statusCategory: iss.statusCategory } : null;
+  }));
+  const issues = results.filter(Boolean).sort((a, b) => a.key.localeCompare(b.key));
+  return { ok: true, issues };
+}
+
+/**
  * reject issue: post comment (ฝังรูป inline ถ้ามี) แล้วย้ายสถานะเป็น "QA REJECT"
  * bodyLines = array บรรทัดสไตล์ description · opts.images = absolute path ของรูป
  * คง comment ที่ post แล้วเสมอ — ถ้าย้ายสถานะไม่ได้ (ไม่มี transition) คืน transitioned:false + transitionError
@@ -847,7 +902,7 @@ module.exports = {
   // retest / reopen
   getIssue, addComment, getTransitions, transitionIssue,
   // qa reject
-  listMyReportedIssues, rejectIssue,
+  listMyReportedIssues, listAllVisibleIssues, listProjectKeys, findIssuesByNumber, rejectIssue,
   // adf
   headerColor, bodyToADF, buildDraftDescriptionADF, bodyLinesToWiki, mediaSingleNode, mediaSinglesToFullWidth, pngSize,
   // drafts

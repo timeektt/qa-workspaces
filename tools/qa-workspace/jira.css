@@ -153,7 +153,7 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 
 /* --- Jira List: search + result --- */
 .jrl-search { display: flex; gap: 10px; margin: 4px 0 12px; }
-.jrl-input { flex: 1; font: inherit; font-size: 14px; padding: 9px 12px; border-radius: 8px; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.12); color: #e6eaf2; }
+.jrl-input { flex: 1; font: inherit; font-size: 14px; padding: 9px 12px; border-radius: 8px; background: #2a2a2a; border: 1px solid #3b82f6; color: #e6eaf2; }
 .jrl-input::placeholder { color: #7d8698; }
 .jrl-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.26); }
 .jrl-result { margin: 0 0 8px; }

@@ -162,23 +162,32 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ---------- Jira List / QA Reject API ----------
-    // list การ์ดที่บัญชีปัจจุบันเป็น reporter — ฝั่งเว็บจัดกลุ่มวันนี้/สัปดาห์นี้/ทั้งหมดเอง
+    // list ทุกใบที่บัญชี .env เห็นได้ (ทุก project) เรียงตามวันที่สร้าง — ฝั่งเว็บจัดกลุ่มวันนี้/สัปดาห์นี้/ทั้งหมดเอง
+    // pagination แบบ cursor: ?pageToken=<token จากรอบก่อน> โหลดหน้าถัดไปของกลุ่ม "ทั้งหมด"
     if (pathname === '/api/jira/my-issues' && req.method === 'GET') {
       if (!JC.envReady()) return sendJson(res, 500, { error: '.env Jira ไม่ครบ' });
-      const all = url.searchParams.get('all') === '1'; // ?all=1 = ดึงครบทุกใบ (ปุ่ม "ดูทั้งหมด")
-      const r = await JC.listMyReportedIssues(all ? undefined : 100);
+      const pageToken = url.searchParams.get('pageToken') || undefined;
+      const r = await JC.listAllVisibleIssues({ pageToken, max: 100 });
       if (!r.ok) return sendJson(res, 502, { error: 'ดึงรายการจาก Jira ไม่สำเร็จ', detail: r.error });
-      return sendJson(res, 200, { issues: r.issues, hasMore: !!r.capped, browseBase: `${JC.base}/browse/` });
+      return sendJson(res, 200, { issues: r.issues, nextPageToken: r.nextPageToken, browseBase: `${JC.base}/browse/` });
     }
 
-    // search: วาง key/url → หาการ์ดใน project · ไม่เจอ/คนละ project = 404
+    // search: วาง key/url (ทุก project) → ใบเดียว · เลขล้วน → ทุกใบที่เลขตรงกันในทุก project · คืน { issues: [...] } เสมอ
     if (pathname === '/api/jira/issue' && req.method === 'GET') {
       if (!JC.envReady()) return sendJson(res, 500, { error: '.env Jira ไม่ครบ' });
-      const key = parseIssueKey(url.searchParams.get('q'));
-      if (!key || !key.startsWith(`${JC.JIRA_PROJECT_KEY}-`)) return sendJson(res, 404, { error: 'ไม่พบข้อมูล / ไม่มี Card นี้' });
-      const iss = await JC.getIssue(key, ['summary', 'status']);
-      if (!iss.ok) return sendJson(res, 404, { error: 'ไม่พบข้อมูล / ไม่มี Card นี้' });
-      return sendJson(res, 200, { issue: { key: iss.key, summary: iss.summary, status: iss.status }, browseBase: `${JC.base}/browse/` });
+      const q = String(url.searchParams.get('q') || '').trim();
+      const browseBase = `${JC.base}/browse/`;
+      const key = parseIssueKey(q);
+      if (key) { // key เต็ม/url → ใบเดียว
+        const iss = await JC.getIssue(key, ['summary', 'status']);
+        return sendJson(res, 200, { issues: iss.ok ? [{ key: iss.key, summary: iss.summary, status: iss.status, statusCategory: iss.statusCategory }] : [], browseBase });
+      }
+      if (/^\d+$/.test(q)) { // เลขล้วน → หาทุก project
+        const r = await JC.findIssuesByNumber(q);
+        if (!r.ok) return sendJson(res, 502, { error: 'ค้นหาไม่สำเร็จ', detail: r.error });
+        return sendJson(res, 200, { issues: r.issues, browseBase });
+      }
+      return sendJson(res, 200, { issues: [], browseBase }); // ไม่ใช่ key/url/เลข → ไม่ค้น
     }
 
     // reject intake: บันทึก (issueKey + เหตุผล + รูป) ให้ Claude ประมวลต่อ

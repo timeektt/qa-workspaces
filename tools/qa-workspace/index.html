@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>QA Workspace — Jira</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231b2436'/><circle cx='16' cy='16' r='9' fill='none' stroke='%2322c39a' stroke-width='2.4'/><circle cx='16' cy='16' r='3' fill='%2322c39a'/></svg>" />
-  <link rel="stylesheet" href="jira.css?v=3" />
+  <link rel="stylesheet" href="jira.css?v=4" />
 </head>
 <body>
   <!-- class="jira-mode" คงไว้เสมอ: CSS โชว์ #jira-view เมื่อ #main มี class นี้ (standalone ไม่มี mode switch) -->
@@ -82,14 +82,13 @@
 
         <div id="jv-sub-list" class="jv-sub" hidden>
           <div class="jv-intro">
-            <p class="jv-eyebrow">Jira · การ์ดที่เราสร้าง (reporter = บัญชีปัจจุบัน)</p>
+            <p class="jv-eyebrow">Jira · ทุกใบที่บัญชี .env มีสิทธิ์เห็น · ทุก project</p>
             <h2>Jira List — ค้นหา + reject การ์ด</h2>
-            <p class="jv-lede">วาง issue key, url หรือเลขการ์ด (เช่น <code>ABC-1979</code>, <code>https://…/browse/ABC-1979</code> หรือ <code>1979</code>) เพื่อค้นการ์ด แล้วกด reject · หรือกด reject จากการ์ดในรายการด้านล่าง · เขียนเหตุผลแล้วสั่ง Claude "ประมวลผล reject ที่ค้างทั้งหมด"</p>
+            <p class="jv-lede">พิมพ์ issue key, url หรือเลขการ์ด (เช่น <code>ABC-1979</code>, <code>https://…/browse/ABC-1979</code> หรือ <code>1979</code>) แล้วระบบค้นให้เองอัตโนมัติ — เลขล้วนจะแสดงทุกใบที่เลขตรงกันในทุก project · กด reject จากผลลัพธ์หรือจากรายการด้านล่าง · เขียนเหตุผลแล้วสั่ง Claude "ประมวลผล reject ที่ค้างทั้งหมด"</p>
           </div>
 
           <div class="jrl-search">
-            <input id="jrl-q" class="jrl-input" type="text" placeholder="วาง issue key, url หรือเลขการ์ด… (ABC-1979 หรือ 1979)" />
-            <button id="jrl-search-btn" class="jm-btn primary">🔍 ค้นหา</button>
+            <input id="jrl-q" class="jrl-input" type="text" autocomplete="off" placeholder="พิมพ์เลขการ์ด, key หรือ url… (ABC-1979, 1979 หรือ https://…/browse/ABC-1979)" />
           </div>
           <div id="jrl-search-result" class="jrl-result"></div>
 
@@ -133,7 +132,7 @@
 
   <script src="jira-common.js"></script>
   <script src="jira-intake.js?v=3"></script>
-  <script src="jira-reject.js"></script>
+  <script src="jira-reject.js?v=2"></script>
   <script src="bootstrap.js"></script>
 </body>
 </html>
