@@ -12,14 +12,16 @@
   const MAX_BYTES = 25 * 1024 * 1024;
   const extOf = (n) => (String(n).split('.').pop() || '').toLowerCase();
   const isImg = (n) => IMAGE_EXT.has(extOf(n));
-  const fileIcon = (n) => {
+  const fileKind = (n) => {
     const e = extOf(n);
-    if (e === 'pdf') return '📄';
-    if (['xls','xlsx','csv'].includes(e)) return '📊';
-    if (['doc','docx','txt'].includes(e)) return '📝';
-    if (e === 'zip') return '🗜';
-    return '📎';
+    if (['xls','xlsx','csv'].includes(e)) return 'xls';
+    if (e === 'pdf') return 'pdf';
+    if (['doc','docx'].includes(e)) return 'doc';
+    if (e === 'txt') return 'txt';
+    if (e === 'zip') return 'zip';
+    return 'file';
   };
+  const extLabel = (n) => (extOf(n) || 'file').toUpperCase().slice(0, 4);
   const humanSize = (b) => b >= 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.max(1,Math.round(b/1024))+' KB';
 
   let searchTimer = null;    // debounce ช่อง search (autosearch)
@@ -49,7 +51,7 @@
         return `<div class="jin-thumb"><img src="${im.dataUri}" alt="${esc(im.name)}" data-i="${i}"><button class="jin-rm" data-i="${i}" title="ลบไฟล์">✕</button></div>`;
       }
       const size = im.size ? humanSize(im.size) : '';
-      return `<div class="jin-file-chip"><span class="fc-ic">${fileIcon(im.name)}</span><span class="fc-meta"><span class="fc-name" title="${esc(im.name)}">${esc(im.name)}</span><span class="fc-size">${esc(size)}</span></span><button class="jin-rm" data-i="${i}" title="ลบไฟล์">✕</button></div>`;
+      return `<div class="jin-file-chip"><span class="fc-badge fc-badge-${fileKind(im.name)}">${esc(extLabel(im.name))}</span><span class="fc-meta"><span class="fc-name" title="${esc(im.name)}">${esc(im.name)}</span><span class="fc-size">${esc(size)}</span></span><button class="jin-rm" data-i="${i}" title="ลบไฟล์">✕</button></div>`;
     }).join('');
     $('jrj-thumbs').querySelectorAll('.jin-rm').forEach((b) =>
       b.addEventListener('click', (e) => { e.stopPropagation(); images.splice(+b.dataset.i, 1); renderThumbs(); }));

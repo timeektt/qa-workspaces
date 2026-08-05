@@ -82,6 +82,7 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 .jin-drop-main { font-weight: 600; }
 .jin-drop-sub { font-size: 12px; opacity: 0.75; }
 .jin-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
+.jin-thumbs:not(:empty) { margin-bottom: 12px; }
 .jin-thumbs .jin-thumb { position: relative; }
 .jin-thumbs img { height: 72px; border-radius: 6px; border: 1px solid #e4e7ec; cursor: zoom-in; transition: transform 0.1s, box-shadow 0.1s; }
 .jin-thumbs img:hover { transform: scale(1.03); box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
@@ -93,7 +94,13 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
   height: 72px; box-sizing: border-box; padding: 8px 14px 8px 10px;
   border: 1px solid #e4e7ec; border-radius: 6px; background: #f9fafb; max-width: 220px;
 }
-.jin-file-chip .fc-ic { font-size: 22px; line-height: 1; }
+.jin-file-chip .fc-badge { flex: none; width: 40px; height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; letter-spacing: 0.3px; color: #fff; }
+.fc-badge-xls { background: #1d6f42; }
+.fc-badge-pdf { background: #c0392b; }
+.fc-badge-doc { background: #2b579a; }
+.fc-badge-txt { background: #5b667a; }
+.fc-badge-zip { background: #b7791f; }
+.fc-badge-file { background: #5b667a; }
 .jin-file-chip .fc-meta { display: flex; flex-direction: column; min-width: 0; }
 .jin-file-chip .fc-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jin-file-chip .fc-size { font-size: 11px; opacity: 0.7; }
