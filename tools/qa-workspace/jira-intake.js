@@ -159,7 +159,8 @@
   }
 
   async function loadPending() {
-    const r = await api('/api/jira/intakes');
+    const hide = QASpinner.overlay($('jin-pending'));
+    const r = await api('/api/jira/intakes').finally(hide);
     const list = (r.ok && r.json.intakes) || [];
     setTabBadge('intake', list.length);
     if (!list.length) { $('jin-pending').innerHTML = '<p class="jm-note">— ยังไม่มี intake ค้าง —</p>'; return; }
@@ -235,7 +236,7 @@
     const text = $('jin-text').value.trim();
     if (!text && !images.length) { $('jin-note').textContent = '✗ ต้องมีข้อความหรือรูปอย่างน้อยหนึ่งอย่าง'; return; }
     const isEdit = !!editingStamp;
-    const btn = $('jin-save'); btn.disabled = true; btn.textContent = isEdit ? 'กำลังอัปเดต…' : 'กำลังบันทึก…';
+    const btn = $('jin-save'); const restore = QASpinner.button(btn, isEdit ? 'กำลังอัปเดต…' : 'กำลังบันทึก…');
     const compSel = $('jin-component');
     const compOpt = compSel && compSel.selectedOptions[0];
     const epicSel = $('jin-epic');
@@ -253,7 +254,7 @@
         sprintLabel: (sprintOpt && sprintOpt.dataset.name) || '',
       }),
     });
-    btn.disabled = false;
+    restore();
     if (r.ok && r.json.ok) {
       editingStamp = null;
       setEditMode(false);
@@ -273,10 +274,9 @@
     if (location.protocol === 'file:') { $('jin-pending').innerHTML = '<p class="jm-note">ต้องเปิดผ่าน server (node tools/qa-workspace/server.js)</p>'; return; }
     const refreshBtn = $('jin-refresh');
     if (refreshBtn) refreshBtn.addEventListener('click', async () => {
-      refreshBtn.disabled = true;
-      const orig = refreshBtn.textContent; refreshBtn.textContent = '⏳ กำลังโหลด…';
+      const restore = QASpinner.button(refreshBtn, 'กำลังโหลด…');
       await loadPending();
-      refreshBtn.textContent = orig; refreshBtn.disabled = false;
+      restore();
     });
     loadMeta();
     loadPending();

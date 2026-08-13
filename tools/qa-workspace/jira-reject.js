@@ -109,12 +109,12 @@
     const reason = $('jrj-reason').value.trim();
     if (!reason) { $('jrj-note').textContent = '✗ ต้องกรอกเหตุผล reject'; return; }
     const isEdit = !!modalCtx.editStamp;
-    const btn = $('jrj-save'); btn.disabled = true; btn.textContent = isEdit ? 'กำลังอัปเดต…' : 'กำลังบันทึก…';
+    const btn = $('jrj-save'); const restore = QASpinner.button(btn, isEdit ? 'กำลังอัปเดต…' : 'กำลังบันทึก…');
     const r = await api(isEdit ? `/api/jira/reject/${modalCtx.editStamp}` : '/api/jira/reject', {
       method: isEdit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ issueKey: modalCtx.issueKey, issueSummary: modalCtx.issueSummary, reason, images }),
     });
-    btn.disabled = false; btn.textContent = isEdit ? '💾 อัปเดต reject intake' : 'บันทึก reject intake';
+    restore();
     if (r.ok && r.json.ok) {
       closeModal();
       $('jrl-note').textContent = `✓ บันทึก reject ${modalCtx && modalCtx.issueKey || ''} แล้ว — สั่ง Claude "ประมวลผล reject ที่ค้างทั้งหมด"`;
@@ -129,7 +129,7 @@
     const q = $('jrl-q').value.trim();
     const box = $('jrl-search-result');
     if (!q) { box.innerHTML = ''; return; }
-    box.innerHTML = '<p class="jm-note">⏳ กำลังค้นหา…</p>';
+    box.innerHTML = QASpinner.inline('กำลังค้นหา…');
     const r = await api(`/api/jira/issue?q=${encodeURIComponent(q)}`);
     if (q !== $('jrl-q').value.trim()) return; // ค่าเปลี่ยนระหว่างรอผล — ทิ้งผลเก่า กันแสดงข้ามคำ
     if (!r.ok) {
@@ -158,7 +158,7 @@
 
   async function loadList() {
     const box = $('jrl-list');
-    box.innerHTML = '<p class="jm-note">⏳ กำลังโหลดรายการจาก Jira…</p>';
+    box.innerHTML = QASpinner.inline('กำลังโหลดรายการจาก Jira…');
     listPageToken = null;
     // หน้าแรก 100 ใบ (ทุก project เรียงสร้างล่าสุด) — พอสำหรับกลุ่มวันนี้/สัปดาห์นี้ · "ทั้งหมด" โหลดเพิ่มด้วย cursor
     const r = await api('/api/jira/my-issues');
@@ -196,9 +196,10 @@
     if (btn) btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!listPageToken) return;
-      btn.textContent = '⏳ กำลังโหลด…'; btn.disabled = true;
+      const restoreMore = QASpinner.button(btn, 'กำลังโหลด…');
       const rr = await api(`/api/jira/my-issues?pageToken=${encodeURIComponent(listPageToken)}`);
-      if (!rr.ok) { btn.textContent = '✗ โหลดไม่สำเร็จ — ลองใหม่'; btn.disabled = false; return; }
+      if (!rr.ok) { restoreMore(); btn.textContent = '✗ โหลดไม่สำเร็จ — ลองใหม่'; btn.disabled = false; return; }
+      restoreMore();
       const more = rr.json.issues || [];
       const cardsWrap = btn.parentElement.querySelector('.jrl-all-cards');
       cardsWrap.insertAdjacentHTML('beforeend', cards(more));
@@ -215,7 +216,8 @@
   // ---------- pending reject intakes ----------
   async function loadPending() {
     const box = $('jrl-pending');
-    const r = await api('/api/jira/rejects');
+    const hide = QASpinner.overlay(box);
+    const r = await api('/api/jira/rejects').finally(hide);
     const list = (r.ok && r.json.rejects) || [];
     setTabBadge('list', list.length);
     if (!list.length) { box.innerHTML = '<p class="jm-note">— ยังไม่มี reject intake ค้าง —</p>'; return; }
