@@ -23,6 +23,7 @@
         <div class="jv-tabs" role="tablist">
           <button class="jv-tab active" data-jtab="intake" role="tab">Create Issue <span class="jv-tab-badge" id="jv-badge-intake" hidden></span></button>
           <button class="jv-tab" data-jtab="list" role="tab">Jira List <span class="jv-tab-badge" id="jv-badge-list" hidden></span></button>
+          <button id="jrw-open" class="jm-btn primary jrw-open" title="สรุปงานที่ฉันลงมือเองในสัปดาห์ เป็นรายงานภาพรวม">📊 สรุป weekly report</button>
         </div>
         <div id="jv-sub-intake" class="jv-sub">
           <div class="jv-intro">
@@ -132,12 +133,41 @@
         </div>
       </div>
     </div>
+
+    <!-- Weekly report modal -->
+    <div id="jrw-modal" class="jrj-modal" hidden>
+      <div class="jrj-box jrw-box">
+        <div class="jrj-hd">
+          <span class="jrj-title">📊 สรุป weekly report</span>
+          <button id="jrw-close" class="jrj-x" title="ปิด (Esc)">✕</button>
+        </div>
+        <p class="jrw-desc">สรุปงานที่ <b>ฉันลงมือเอง</b> (สร้าง / กด done / กด reject) ในสัปดาห์ที่เลือก เป็นรายงานภาพรวม — เลือกช่วงแล้วกด “สรุปรายงาน” เพื่อคัดลอกคำสั่งไปวางในแชท Claude Code</p>
+        <div class="jrw-weeks" role="radiogroup" aria-label="เลือกช่วงสัปดาห์">
+          <label class="jrw-week">
+            <input type="radio" name="jrw-range" value="this" checked>
+            <span class="jrw-week-main">สัปดาห์นี้</span>
+            <span class="jrw-week-dates" id="jrw-this-dates">—</span>
+          </label>
+          <label class="jrw-week">
+            <input type="radio" name="jrw-range" value="last">
+            <span class="jrw-week-main">สัปดาห์ก่อน</span>
+            <span class="jrw-week-dates" id="jrw-last-dates">—</span>
+          </label>
+        </div>
+        <div class="jin-actions">
+          <button id="jrw-run" class="jm-btn primary">📋 สรุปรายงาน (คัดลอกคำสั่ง)</button>
+          <button id="jrw-cancel" class="jm-btn ghost">ยกเลิก</button>
+        </div>
+        <p class="jrw-hint" id="jrw-hint" hidden></p>
+      </div>
+    </div>
   </main>
 
   <script src="qa-spinner.js"></script>
   <script src="jira-common.js"></script>
   <script src="jira-intake.js?v=4"></script>
   <script src="jira-reject.js?v=3"></script>
+  <script src="jira-weekly.js?v=1"></script>
   <script src="bootstrap.js"></script>
 </body>
 </html>

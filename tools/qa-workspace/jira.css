@@ -163,7 +163,8 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 #main.jira-mode .jin-pending .jm-note { color: #7d8698; }
 
 /* --- Jira tabs (Create Issue / Jira List) --- */
-.jv-tabs { display: flex; gap: 4px; margin: 0 0 22px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.jv-tabs { display: flex; align-items: center; gap: 4px; margin: 0 0 22px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.jv-tabs .jrw-open { margin-left: auto; align-self: center; padding: 7px 15px; }
 .jv-tab { font: inherit; font-size: 14px; font-weight: 600; padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; color: #9aa1af; cursor: pointer; margin-bottom: -1px; }
 .jv-tab:hover { color: #cdd4e0; }
 .jv-tab.active { color: #fff; border-bottom-color: #4a90f7; }
@@ -217,3 +218,17 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 .jrj-issue b { color: #7fb0ff; }
 .jrj-box .jin-drop { margin-bottom: 10px; }
 .jrj-box .jin-thumbs { margin-bottom: 10px; }
+
+/* ---- Weekly report modal (dark) ---- */
+.jrw-box { width: min(480px, 100%); }
+.jrw-desc { color: #cdd4e0; font-size: 14px; line-height: 1.55; margin: 0 0 16px; }
+.jrw-desc b { color: #fff; }
+.jrw-weeks { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.jrw-week { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid rgba(255,255,255,0.14); border-radius: 11px; cursor: pointer; transition: border-color .12s, background .12s; }
+.jrw-week:hover { border-color: var(--blue); background: rgba(59,130,246,0.08); }
+.jrw-week:has(input:checked) { border-color: var(--blue); background: rgba(59,130,246,0.16); box-shadow: 0 0 0 1px var(--blue) inset; }
+.jrw-week input { accent-color: var(--blue); width: 16px; height: 16px; }
+.jrw-week-main { font-weight: 600; color: #fff; }
+.jrw-week-dates { margin-left: auto; color: #9aa1af; font-size: 13px; }
+.jrw-hint { margin: 14px 0 0; padding: 10px 12px; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.35); border-radius: 9px; color: #cfe0ff; font-size: 13px; line-height: 1.6; }
+.jrw-hint code { background: rgba(255,255,255,0.12); padding: 1px 6px; border-radius: 5px; font-size: 12px; color: #fff; }

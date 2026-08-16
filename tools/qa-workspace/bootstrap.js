@@ -3,4 +3,5 @@
 document.addEventListener('DOMContentLoaded', () => {
   if (window.initJiraIntake) window.initJiraIntake();
   if (window.initJiraReject) window.initJiraReject();
+  if (window.initJiraWeekly) window.initJiraWeekly();
 });
