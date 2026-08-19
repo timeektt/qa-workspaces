@@ -24,6 +24,7 @@
 
   let state = { group: 'qa', window: 'week' };
   const cache = {};              // window → data ที่ดึงมาแล้ว
+  const inflight = {};           // window → กำลัง fetch อยู่ (กันซ้อน + กัน render ทำจอว่างตอนโหลด)
   const colorMap = {};           // accountId → สี (คงที่ทั้ง session modal)
   const hidden = new Set();      // accountId ที่ถูกซ่อน (คลิก legend)
   let colorSeq = 0;
@@ -41,16 +42,21 @@
     const box = $('jst-charts');
     $('jst-meta').hidden = true;
     if (cache[win]) return render();
+    if (inflight[win]) return;          // กำลังโหลด window นี้อยู่แล้ว — กัน fetch ซ้อน
+    inflight[win] = true;
     box.innerHTML = '';
-    const hide = window.QASpinner ? QASpinner.overlay(box, 'กำลังดึงสถิติจาก Jira…') : () => {};
-    const r = await api('/api/jira/stats?window=' + win, { timeoutMs: 120000 }); // year ดึงนาน
+    const label = 'กำลังดึงสถิติจาก Jira…' + (win === 'year' ? ' (1 ปี ใช้เวลาสักครู่ ~30 วินาที)' : win === 'quarter' ? ' (สักครู่)' : '');
+    const hide = window.QASpinner ? QASpinner.overlay(box, label) : () => {};
+    const r = await api('/api/jira/stats?window=' + win, { timeoutMs: 180000 }); // year ดึงนาน
+    inflight[win] = false;
     hide();
     if (!r.ok || !r.json || !r.json.ok) {
-      box.innerHTML = '<p class="jst-empty">⚠️ ดึงสถิติไม่สำเร็จ — ' + ((r.json && (r.json.error)) || 'ตรวจว่า server รันอยู่และ .env Jira ครบ') + '</p>';
+      if (state.window === win) box.innerHTML = '<p class="jst-empty">⚠️ ดึงสถิติไม่สำเร็จ — ' + ((r.json && (r.json.error)) || 'ตรวจว่า server รันอยู่และ .env Jira ครบ') + '<br><button class="jm-btn primary" id="jst-retry" style="margin-top:10px">ลองใหม่</button></p>';
+      const rb = $('jst-retry'); if (rb) rb.addEventListener('click', load);
       return;
     }
     cache[win] = r.json;
-    render();
+    if (state.window === win) render();  // เฉพาะถ้ายังดู window นี้อยู่ (ผู้ใช้อาจสลับไปแล้ว)
   }
 
   // personmap { id:{name,values} } → [{id,name,values,color}] เรียงตามผลรวมมาก→น้อย
@@ -64,8 +70,8 @@
   function render() {
     const data = cache[state.window];
     const box = $('jst-charts');
+    if (!data) return load();   // ยังไม่มีข้อมูล → โหลด (load คุม spinner เอง ไม่ทำจอว่าง)
     box.innerHTML = '';
-    if (!data) return;
 
     // meta: จำนวนการ์ด + เตือน truncated
     const meta = $('jst-meta');
@@ -230,6 +236,6 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('jst-modal').hidden) closeModal(); });
     document.querySelectorAll('.jst-seg-btn').forEach((b) => b.addEventListener('click', () => setGroup(b.dataset.group)));
     document.querySelectorAll('.jst-win-btn').forEach((b) => b.addEventListener('click', () => setWindow(b.dataset.window)));
-    window.addEventListener('resize', () => { if (!$('jst-modal').hidden) render(); });
+    window.addEventListener('resize', () => { if (!$('jst-modal').hidden && cache[state.window]) render(); });
   };
 })();
