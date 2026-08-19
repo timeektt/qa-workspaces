@@ -150,10 +150,36 @@
       gRoot.append('path').attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', 2)
         .attr('d', line(s.values));
       gRoot.selectAll(null).data(s.values).enter().append('circle')
-        .attr('cx', (_, i) => x(i)).attr('cy', (v) => y(v)).attr('r', 3)
-        .attr('fill', s.color)
-        .append('title').text((v, i) => `${s.name} — ${labels[i]}: ${v}`);
+        .attr('cx', (_, i) => x(i)).attr('cy', (v) => y(v)).attr('r', 3).attr('fill', s.color);
     }
+
+    // ---- hover tooltip: ชี้ที่กราฟ → เส้นไกด์ตั้ง + กล่องแสดงค่าทุกคน ณ bucket นั้น ----
+    const xs = labels.map((_, i) => x(i));
+    const tip = document.createElement('div');
+    tip.className = 'jst-tooltip'; tip.hidden = true;
+    wrap.style.position = 'relative';
+    wrap.appendChild(tip);
+    const guide = gRoot.append('line').attr('class', 'jst-guide').attr('y1', 0).attr('y2', ih).style('display', 'none');
+    const dots = gRoot.append('g');
+    gRoot.append('rect').attr('width', iw).attr('height', ih).attr('fill', 'transparent').style('cursor', 'crosshair')
+      .on('mousemove', function (ev) {
+        const [mx, my] = d3.pointer(ev, this);
+        let bi = 0, best = Infinity;
+        for (let i = 0; i < xs.length; i++) { const d = Math.abs(mx - xs[i]); if (d < best) { best = d; bi = i; } }
+        guide.attr('x1', xs[bi]).attr('x2', xs[bi]).style('display', null);
+        const rows = series.map((s) => ({ name: s.name, color: s.color, v: s.values[bi] })).filter((r) => r.v > 0).sort((a, b) => b.v - a.v);
+        dots.selectAll('circle').data(rows).join('circle')
+          .attr('cx', xs[bi]).attr('cy', (r) => y(r.v)).attr('r', 4.5).attr('fill', (r) => r.color)
+          .attr('stroke', '#fff').attr('stroke-width', 1.5);
+        tip.innerHTML = `<div class="jst-tt-title">${escapeHtml(labels[bi])}</div>`
+          + (rows.length ? rows.map((r) => `<div class="jst-tt-row"><span class="jst-swatch" style="background:${r.color}"></span>${escapeHtml(r.name)}<b>${r.v}</b></div>`).join('') : '<div class="jst-tt-row jst-tt-zero">— ไม่มี —</div>');
+        tip.hidden = false;
+        const px = xs[bi] + m.left, py = my + m.top;
+        const tw = tip.offsetWidth, flip = px + 14 + tw > wrap.clientWidth;
+        tip.style.left = (flip ? px - tw - 12 : px + 14) + 'px';
+        tip.style.top = Math.max(0, py - 10) + 'px';
+      })
+      .on('mouseleave', () => { tip.hidden = true; guide.style('display', 'none'); dots.selectAll('circle').remove(); });
   }
 
   function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }

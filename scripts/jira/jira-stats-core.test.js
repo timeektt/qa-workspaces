@@ -73,19 +73,31 @@ test('QA.created: นับตาม reporter ลงถังวัน created',
   assert.equal(r.groups.qa.created.qa2, undefined); // นอกหน้าต่างไม่โผล่
 });
 
-test('QA.rejected + QA.closed: นับตาม author ของ transition', () => {
+test('QA.rejected + QA.closed: attribute ให้ reporter ของการ์ด (ไม่สนคนกด)', () => {
   const issues = [
     { key: 'T-1', fields: { created: '2026-01-01T00:00:00', reporter: P('qa1', 'QA หนึ่ง') },
       changelog: { histories: [
-        statusHist(P('qa1', 'QA หนึ่ง'), '2026-08-19T10:00:00', 'QA Rejected'),
-        statusHist(P('qa2', 'QA สอง'), '2026-08-17T10:00:00', 'Done'),
-        statusHist(P('qa1', 'QA หนึ่ง'), '2026-08-01T10:00:00', 'Done'), // นอกหน้าต่าง
+        statusHist(P('devX', 'Dev X'), '2026-08-19T10:00:00', 'QA Rejected'), // ใครกดก็ได้
+        statusHist(P('devY', 'Dev Y'), '2026-08-17T10:00:00', 'Done'),
+        statusHist(P('devZ', 'Dev Z'), '2026-08-01T10:00:00', 'Done'),        // นอกหน้าต่าง
       ] } },
   ];
   const r = C.aggregate(issues, opts);
-  assert.deepEqual(r.groups.qa.rejected.qa1.values, [0, 0, 0, 0, 0, 0, 1]);
-  assert.deepEqual(r.groups.qa.closed.qa2.values, [0, 0, 0, 0, 1, 0, 0]); // 17/8 = idx4
-  assert.equal(r.groups.qa.closed.qa1, undefined); // done นอกหน้าต่างไม่นับ
+  assert.deepEqual(r.groups.qa.rejected.qa1.values, [0, 0, 0, 0, 0, 0, 1]); // reject 19/8 → reporter qa1
+  assert.deepEqual(r.groups.qa.closed.qa1.values, [0, 0, 0, 0, 1, 0, 0]);   // done 17/8 → reporter qa1
+  assert.equal(r.groups.qa.rejected.devX, undefined);                        // คนกดไม่ถูกนับใน QA
+});
+
+test('Dev.resolved: attribute ให้ assignee ณ เวลาที่ done (ไม่สนคนกด)', () => {
+  const issues = [
+    { key: 'T-1', fields: { created: '2026-01-01T00:00:00', reporter: P('qa1', 'QA'), assignee: P('dev1', 'Dev หนึ่ง') },
+      changelog: { histories: [
+        statusHist(P('qaX', 'QA X'), '2026-08-18T10:00:00', 'Done'), // คนกดเป็น QA แต่ credit ให้ assignee
+      ] } },
+  ];
+  const r = C.aggregate(issues, opts);
+  assert.deepEqual(r.groups.dev.resolved.dev1.values, [0, 0, 0, 0, 0, 1, 0]); // 18/8 = idx5
+  assert.equal(r.groups.dev.resolved.qaX, undefined);
 });
 
 test('Dev.assigned: นับตามคนที่ถูกตั้งเป็น assignee', () => {

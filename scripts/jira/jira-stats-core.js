@@ -136,20 +136,22 @@ function aggregate(issues, { window, now, doneSet }) {
     }
     assignChanges.sort((a, b) => a.at - b.at);
 
+    // QA metric attribute ให้ reporter ของการ์ด · Dev metric ให้ assignee (ณ เวลา event) — ไม่สนว่าใครกด
+    const rep = f.reporter;
     for (const h of histories) {
       const at = Date.parse(h.created);
       const idx = index(at);
-      const author = h.author || {};
       for (const item of (h.items || [])) {
         if (item.field === 'status') {
           const to = item.toString;
           if (isReject(to)) {
-            bump(groups.qa.rejected, author.accountId, author.displayName, idx, n);
+            if (rep) bump(groups.qa.rejected, rep.accountId, rep.displayName, idx, n);
             const a = assigneeAt(assignChanges, at, f.assignee);
             if (a && a.id) bump(groups.dev.rejected, a.id, a.name, idx, n);
           } else if (isDone(to)) {
-            bump(groups.qa.closed, author.accountId, author.displayName, idx, n);
-            bump(groups.dev.resolved, author.accountId, author.displayName, idx, n);
+            if (rep) bump(groups.qa.closed, rep.accountId, rep.displayName, idx, n);
+            const a = assigneeAt(assignChanges, at, f.assignee);
+            if (a && a.id) bump(groups.dev.resolved, a.id, a.name, idx, n);
           }
         } else if (item.field === 'assignee' && item.to) {
           bump(groups.dev.assigned, item.to, item.toString, idx, n);
