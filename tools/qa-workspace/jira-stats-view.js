@@ -113,6 +113,20 @@
       const svgWrap = document.createElement('div');
       svgWrap.className = 'jst-svg-wrap';
       card.appendChild(svgWrap);
+
+      // ยอดรวมแยกรายคนของ metric นี้ (เรียงมาก→น้อย, เฉพาะที่ >0)
+      const perPerson = seriesOf(g[m.key]).filter((s) => s.total > 0);
+      if (perPerson.length) {
+        const tw = document.createElement('div');
+        tw.className = 'jst-totals';
+        for (const s of perPerson) {
+          const chip = document.createElement('span');
+          chip.className = 'jst-total-item';
+          chip.innerHTML = `<span class="jst-swatch" style="background:${s.color}"></span>${escapeHtml(s.name)}<b>${s.total}</b>`;
+          tw.appendChild(chip);
+        }
+        card.appendChild(tw);
+      }
       box.appendChild(card);
       drawChart(svgWrap, data.buckets.map((b) => b.label), seriesOf(g[m.key]).filter((s) => !hidden.has(s.id)));
     }
