@@ -105,9 +105,10 @@
     for (const m of metrics) {
       const card = document.createElement('div');
       card.className = 'jst-chart';
+      const total = Object.values(g[m.key] || {}).reduce((s, p) => s + p.values.reduce((a, b) => a + b, 0), 0);
       const h = document.createElement('div');
       h.className = 'jst-chart-title';
-      h.textContent = m.title;
+      h.innerHTML = `${escapeHtml(m.title)} <span class="jst-chart-total">รวม ${total}</span>`;
       card.appendChild(h);
       const svgWrap = document.createElement('div');
       svgWrap.className = 'jst-svg-wrap';

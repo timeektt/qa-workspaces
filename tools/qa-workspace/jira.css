@@ -251,6 +251,7 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 .jst-swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; }
 .jst-chart { margin-bottom: 16px; }
 .jst-chart-title { font-weight: 700; color: #fff; font-size: 14px; margin-bottom: 2px; }
+.jst-chart-total { display: inline-block; font-weight: 600; font-size: 12px; color: #cfe0ff; background: rgba(59,130,246,0.16); border: 1px solid rgba(59,130,246,0.35); border-radius: 20px; padding: 1px 9px; margin-left: 6px; }
 .jst-svg-wrap { width: 100%; }
 .jst-axis text { fill: #9aa4b2; font-size: 11px; }
 .jst-axis .domain, .jst-axis line { stroke: rgba(255,255,255,0.18); }
