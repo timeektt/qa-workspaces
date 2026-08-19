@@ -71,7 +71,8 @@
     const meta = $('jst-meta');
     meta.hidden = false;
     meta.textContent = `ช่วง ${WIN_LABEL[state.window]} · อ้างอิงวันที่ทำจริง (changelog) · ประมวลจาก ${data.issueCount} การ์ด`
-      + (data.truncated ? ` · ⚠️ การ์ดเกินเพดาน ${data.issueCount} ใบ (เอาที่อัปเดตล่าสุดก่อน) — ช่วงเวลาเก่าอาจนับได้ต่ำกว่าจริง` : '');
+      + (data.truncated ? ` · ⚠️ การ์ดเกินเพดาน ${data.issueCount} ใบ (เอาที่อัปเดตล่าสุดก่อน) — ช่วงเวลาเก่าอาจนับได้ต่ำกว่าจริง` : '')
+      + (data.failed ? ` · ⚠️ ดึงไม่สำเร็จ ${data.failed} ใบ (ข้ามไป)` : '');
 
     const g = data.groups[state.group];
     const metrics = METRICS[state.group];

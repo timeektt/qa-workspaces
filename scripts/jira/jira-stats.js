@@ -20,6 +20,22 @@ const CACHE_TTL = 5 * 60 * 1000; // cache ผลต่อ window 5 นาที 
 const cache = {}; // window → { at, data }
 const pad = (n) => String(n).padStart(2, '0');
 const jqlDate = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// เรียก Jira แบบไม่ throw + retry (network blip / 429 / 5xx) — กัน Promise.all ล้มทั้งก้อนเพราะใบเดียว
+async function safeJira(method, path, body, tries = 3) {
+  let last = { ok: false };
+  for (let t = 0; t < tries; t++) {
+    try {
+      const r = await J.jira(method, path, body);
+      if (r.ok) return r;
+      last = r;
+      if (r.status && r.status < 500 && r.status !== 429) return r; // 4xx (ยกเว้น 429) = ไม่ต้อง retry
+    } catch (e) { last = { ok: false, error: String(e && e.message || e) }; }
+    await sleep(300 * (t + 1)); // backoff เพิ่มขึ้น
+  }
+  return last;
+}
 
 // วน nextPageToken ของ /search/jql จนครบ (ดึงแค่ key พอ)
 async function searchAllKeys(jql) {
@@ -28,8 +44,8 @@ async function searchAllKeys(jql) {
   for (let guard = 0; guard < 40; guard++) {
     const body = { jql, maxResults: 100, fields: ['key'] };
     if (token) body.nextPageToken = token;
-    const r = await J.jira('POST', '/rest/api/3/search/jql', body);
-    if (!r.ok) return { ok: false, status: r.status, error: r.json, keys: out };
+    const r = await safeJira('POST', '/rest/api/3/search/jql', body);
+    if (!r.ok) return { ok: false, status: r.status, error: r.json || r.error, keys: out };
     for (const it of (r.json.issues || [])) out.push(it.key);
     if (r.json.isLast || !r.json.nextPageToken) break;
     token = r.json.nextPageToken;
@@ -39,7 +55,7 @@ async function searchAllKeys(jql) {
 
 // map ชื่อสถานะ → หมวด done (Set ของชื่อ lowercase)
 async function doneStatusSet() {
-  const r = await J.jira('GET', '/rest/api/3/status');
+  const r = await safeJira('GET', '/rest/api/3/status');
   const s = new Set();
   if (r.ok && Array.isArray(r.json)) {
     for (const st of r.json) {
@@ -71,17 +87,18 @@ async function collect(window, { noCache = false } = {}) {
   const keys = keysRes.keys.slice(0, CAP);
   const doneSet = await doneStatusSet();
 
-  // อ่าน changelog แบบ batch ขนาน
+  // อ่าน changelog แบบ batch ขนาน (safeJira = ใบที่ fail ถูกข้าม ไม่ล้มทั้งก้อน)
   const issues = [];
+  let failed = 0;
   for (let i = 0; i < keys.length; i += BATCH) {
     const batch = keys.slice(i, i + BATCH);
     const rs = await Promise.all(batch.map((k) =>
-      J.jira('GET', `/rest/api/3/issue/${k}?expand=changelog&fields=summary,created,reporter,assignee,components,status`)));
-    for (const r of rs) if (r.ok && r.json && r.json.key) issues.push(r.json);
+      safeJira('GET', `/rest/api/3/issue/${k}?expand=changelog&fields=summary,created,reporter,assignee,components,status`)));
+    for (const r of rs) { if (r.ok && r.json && r.json.key) issues.push(r.json); else failed++; }
   }
 
   const agg = core.aggregate(issues, { window, now, doneSet });
-  const data = { ok: true, window, generatedAt: now, issueCount: issues.length, truncated, ...agg };
+  const data = { ok: true, window, generatedAt: now, issueCount: issues.length, truncated, failed, ...agg };
   cache[window] = { at: Date.now(), data };
   return data;
 }
