@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>QA Workspace — Jira</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231b2436'/><circle cx='16' cy='16' r='9' fill='none' stroke='%2322c39a' stroke-width='2.4'/><circle cx='16' cy='16' r='3' fill='%2322c39a'/></svg>" />
-  <link rel="stylesheet" href="jira.css?v=4" />
+  <link rel="stylesheet" href="jira.css?v=5" />
 </head>
 <body>
   <!-- class="jira-mode" คงไว้เสมอ: CSS โชว์ #jira-view เมื่อ #main มี class นี้ (standalone ไม่มี mode switch) -->
@@ -24,12 +24,13 @@
           <button class="jv-tab active" data-jtab="intake" role="tab">Create Issue <span class="jv-tab-badge" id="jv-badge-intake" hidden></span></button>
           <button class="jv-tab" data-jtab="list" role="tab">Jira List <span class="jv-tab-badge" id="jv-badge-list" hidden></span></button>
           <button id="jrw-open" class="jm-btn primary jrw-open" title="สรุปงานที่ฉันลงมือเองในสัปดาห์ เป็นรายงานภาพรวม">📊 สรุป weekly report</button>
+          <button id="jst-open" class="jm-btn primary jst-open" title="สถิติการทำงานทีม QA และ Dev เป็นกราฟรายคน">📈 สถิติ</button>
         </div>
         <div id="jv-sub-intake" class="jv-sub">
           <div class="jv-intro">
             <p class="jv-eyebrow">agent-data/jira-drafts/intake · จับข้อความ+รูป ให้ Claude ประมวลต่อ</p>
             <h2>Intake — วางข้อความบั๊ก + รูป</h2>
-            <p class="jv-lede">วางคำอธิบาย + รูปประกอบ แล้วบันทึก · จากนั้นสั่ง Claude "ประมวลผล intake ที่ค้างทั้งหมด" เพื่อสร้าง Jira issue</p>
+            <p class="jv-lede">วางคำอธิบาย + รูปประกอบ แล้วบันทึก · จากนั้นสั่ง Claude "ประมวลผล Jira intake ที่ค้างทั้งหมด" เพื่อสร้าง Jira issue</p>
           </div>
           <div class="jin-row jin-type-row">
             <label>ประเภทงาน — Bug หรือ Improvement
@@ -74,7 +75,7 @@
           <div class="jin-actions">
             <button id="jin-save" class="jm-btn primary">บันทึก intake</button>
             <button id="jin-cancel-edit" class="jm-btn ghost" style="display:none">✕ ยกเลิกแก้ไข</button>
-            <button id="jin-copy-cmd" class="jm-btn primary">📋 คัดลอก “ประมวลผล intake ที่ค้างทั้งหมด”</button>
+            <button id="jin-copy-cmd" class="jm-btn primary">📋 คัดลอก “ประมวลผล Jira intake ที่ค้างทั้งหมด”</button>
             <span id="jin-note" class="jm-note"></span>
           </div>
           <h3 class="jin-pending-hd">Pending intakes
@@ -161,13 +162,39 @@
         <p class="jrw-hint" id="jrw-hint" hidden></p>
       </div>
     </div>
+
+    <!-- Jira stats modal -->
+    <div id="jst-modal" class="jrj-modal" hidden>
+      <div class="jrj-box jst-box">
+        <div class="jrj-hd">
+          <span class="jrj-title">📈 สถิติการทำงานทีม (Jira)</span>
+          <button id="jst-close" class="jrj-x" title="ปิด (Esc)">✕</button>
+        </div>
+        <div class="jst-controls">
+          <div class="jst-seg" role="radiogroup" aria-label="เลือกกลุ่ม">
+            <button class="jst-seg-btn active" data-group="qa" role="radio" aria-checked="true">👩‍💻 กลุ่ม QA</button>
+            <button class="jst-seg-btn" data-group="dev" role="radio" aria-checked="false">🛠 กลุ่ม Dev</button>
+          </div>
+          <div class="jst-seg jst-seg-window" role="radiogroup" aria-label="เลือกช่วงเวลา">
+            <button class="jst-win-btn active" data-window="week" role="radio" aria-checked="true">1 สัปดาห์</button>
+            <button class="jst-win-btn" data-window="month" role="radio" aria-checked="false">1 เดือน</button>
+            <button class="jst-win-btn" data-window="quarter" role="radio" aria-checked="false">3 เดือน</button>
+            <button class="jst-win-btn" data-window="year" role="radio" aria-checked="false">1 ปี</button>
+          </div>
+        </div>
+        <p class="jst-meta" id="jst-meta" hidden></p>
+        <div class="jst-charts" id="jst-charts"></div>
+      </div>
+    </div>
   </main>
 
+  <script src="d3.v7.min.js"></script>
   <script src="qa-spinner.js"></script>
   <script src="jira-common.js"></script>
   <script src="jira-intake.js?v=4"></script>
   <script src="jira-reject.js?v=3"></script>
   <script src="jira-weekly.js?v=1"></script>
+  <script src="jira-stats-view.js?v=1"></script>
   <script src="bootstrap.js"></script>
 </body>
 </html>

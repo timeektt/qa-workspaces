@@ -13,6 +13,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const JC = require('../../scripts/jira/jira-client');
+const JStats = require('../../scripts/jira/jira-stats');
 
 const MAP_DIR = __dirname; // เสิร์ฟไฟล์ static ในโฟลเดอร์นี้
 const INTAKE_DIR = path.join(JC.DRAFTS_DIR, 'intake');
@@ -167,6 +168,15 @@ const server = http.createServer(async (req, res) => {
       const r = await JC.listAllVisibleIssues({ pageToken, max: 100 });
       if (!r.ok) return sendJson(res, 502, { error: 'ดึงรายการจาก Jira ไม่สำเร็จ', detail: r.error });
       return sendJson(res, 200, { issues: r.issues, nextPageToken: r.nextPageToken, browseBase: `${JC.base}/browse/` });
+    }
+
+    // stats: สถิติรายคน/ราย bucket (QA: created/rejected/closed · Dev: assigned/resolved/rejected)
+    if (pathname === '/api/jira/stats' && req.method === 'GET') {
+      if (!JC.envReady()) return sendJson(res, 500, { error: '.env Jira ไม่ครบ' });
+      const window = String(url.searchParams.get('window') || 'month');
+      const r = await JStats.collect(window);
+      if (!r.ok) return sendJson(res, 502, r);
+      return sendJson(res, 200, r);
     }
 
     // search: วาง key/url (ทุก project) → ใบเดียว · เลขล้วน → ทุกใบที่เลขตรงกันในทุก project · คืน { issues: [...] } เสมอ

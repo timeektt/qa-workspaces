@@ -7,7 +7,7 @@
   async function api(path, opts = {}) {
     // timeout กัน fetch ค้างไม่รู้จบ (server ล่ม/ช้า) — คืน {ok:false} แทน throw ให้ caller reset UI ได้
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 20000);
+    const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs || 20000);
     try {
       const res = await fetch(path, { ...opts, signal: ctrl.signal });
       const json = await res.json().catch(() => ({}));
