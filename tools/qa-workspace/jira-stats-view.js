@@ -9,14 +9,14 @@
 
   const METRICS = {
     qa: [
-      { key: 'created', title: 'สร้าง issue' },
-      { key: 'rejected', title: 'Reject การ์ด' },
-      { key: 'closed', title: 'ปิดงาน (Done)' },
+      { key: 'created', title: 'issue ที่แจ้งใหม่' },
+      { key: 'rejected', title: 'issue ที่ถูกตีกลับ (QA Rejected)' },
+      { key: 'closed', title: 'issue ที่ปิดสำเร็จ (Done)' },
     ],
     dev: [
-      { key: 'assigned', title: 'ถูก assign' },
-      { key: 'resolved', title: 'Resolve (Done)' },
-      { key: 'rejected', title: 'ถูก reject' },
+      { key: 'assigned', title: 'งานที่รับผิดชอบ (ถูก assign)' },
+      { key: 'resolved', title: 'งานที่แก้เสร็จ (Done)' },
+      { key: 'rejected', title: 'งานที่ถูกตีกลับ (QA Rejected)' },
     ],
   };
   const WIN_LABEL = { week: '1 สัปดาห์', month: '1 เดือน', quarter: '3 เดือน', year: '1 ปี' };
