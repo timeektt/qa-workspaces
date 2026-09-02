@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>QA Workspace — Jira</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231b2436'/><circle cx='16' cy='16' r='9' fill='none' stroke='%2322c39a' stroke-width='2.4'/><circle cx='16' cy='16' r='3' fill='%2322c39a'/></svg>" />
-  <link rel="stylesheet" href="jira.css?v=9" />
+  <link rel="stylesheet" href="jira.css?v=11" />
 </head>
 <body>
   <!-- class="jira-mode" คงไว้เสมอ: CSS โชว์ #jira-view เมื่อ #main มี class นี้ (standalone ไม่มี mode switch) -->
@@ -23,6 +23,7 @@
         <div class="jv-tabs" role="tablist">
           <button class="jv-tab active" data-jtab="intake" role="tab">Create Issue <span class="jv-tab-badge" id="jv-badge-intake" hidden></span></button>
           <button class="jv-tab" data-jtab="list" role="tab">Jira List <span class="jv-tab-badge" id="jv-badge-list" hidden></span></button>
+          <button class="jv-tab" data-jtab="track" role="tab">ติดตาม issue <span class="jv-tab-badge" id="jv-badge-track" hidden></span></button>
           <button id="jrw-open" class="jm-btn primary jrw-open" title="สรุปงานที่ฉันลงมือเองในสัปดาห์ เป็นรายงานภาพรวม">📊 สรุป weekly report</button>
           <button id="jst-open" class="jm-btn primary jst-open" title="สถิติการทำงานทีม QA และ Dev เป็นกราฟรายคน">📈 สถิติ</button>
         </div>
@@ -106,6 +107,62 @@
           <div id="jrl-pending" class="jin-pending"></div>
 
           <div id="jrl-list" class="jrl-groups"></div>
+        </div>
+
+        <div id="jv-sub-track" class="jv-sub" hidden>
+          <div class="jv-intro">
+            <p class="jv-eyebrow">Jira · รอบติดตาม · สถานะดึงสดจาก Jira ทุกครั้ง</p>
+            <h2>ติดตาม issue — เหลือใบไหนต้องแก้ให้เสร็จในรอบนี้</h2>
+            <p class="jv-lede">สร้าง “รอบ” พร้อมวันครบกำหนด แล้วค้นหาการ์ดที่ต้องแก้มาใส่ในรอบนั้น — ระบบจะดึงสถานะล่าสุดจาก Jira มาแยกให้ว่าใบไหนเสร็จแล้วและใบไหนยังเหลือ</p>
+          </div>
+          <div class="jtk-roundbar">
+            <label class="jtk-round-pick" for="jtk-round">รอบที่ติดตาม
+              <select id="jtk-round" class="jm-select"></select>
+            </label>
+            <div class="jtk-round-actions">
+              <button id="jtk-new" class="jm-btn primary">＋ รอบใหม่</button>
+              <button id="jtk-edit" class="jm-btn ghost" title="แก้ชื่อรอบและวันครบกำหนด">✏️ แก้ไขรอบ</button>
+              <button id="jtk-del" class="jm-btn ghost jtk-danger" title="ลบรอบนี้ทิ้งถาวร">🗑 ลบรอบ</button>
+            </div>
+          </div>
+
+          <div id="jtk-summary" class="jtk-summary" aria-live="polite"></div>
+
+          <div class="jrl-search">
+            <label class="jtk-sr-only" for="jtk-q">ค้นหาการ์ด Jira เพื่อเพิ่มเข้ารอบ</label>
+            <input id="jtk-q" class="jrl-input" type="text" autocomplete="off" placeholder="พิมพ์เลขการ์ด, key หรือ url… (ABC-1979, 1979 หรือ https://…/browse/ABC-1979)" />
+          </div>
+          <div id="jtk-search-result" class="jrl-result"></div>
+
+          <div class="jin-actions">
+            <button id="jtk-refresh" class="jm-btn primary" title="ดึงสถานะล่าสุดของทุกการ์ดในรอบจาก Jira">🔄 รีเฟรชสถานะ</button>
+            <span id="jtk-note" class="jm-note" aria-live="polite"></span>
+          </div>
+
+          <div id="jtk-list" class="jrl-groups"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Round form modal (สร้าง/แก้ไขรอบติดตาม) -->
+    <div id="jtk-modal" class="jrj-modal" hidden>
+      <div class="jrj-box jtk-box">
+        <div class="jrj-hd">
+          <span class="jrj-title" id="jtk-modal-title">รอบใหม่</span>
+          <button id="jtk-modal-close" class="jrj-x" aria-label="ปิดหน้าต่าง (Esc)" title="ปิด (Esc)">✕</button>
+        </div>
+        <div class="jtk-form">
+          <label for="jtk-f-due"><span>วันครบกำหนด <span class="jtk-req" title="ต้องกรอก">*</span></span>
+            <input id="jtk-f-due" class="jm-select" type="date" required />
+          </label>
+          <label for="jtk-f-name">ชื่อรอบ (ไม่กรอกได้ — ระบบตั้งชื่อจากวันครบกำหนดให้)
+            <input id="jtk-f-name" class="jm-select" type="text" placeholder="เช่น รอบแก้ก่อน UAT" />
+          </label>
+        </div>
+        <div class="jin-actions">
+          <button id="jtk-f-save" class="jm-btn primary">บันทึกรอบ</button>
+          <button id="jtk-f-cancel" class="jm-btn ghost">ยกเลิก</button>
+          <span id="jtk-f-note" class="jm-note" aria-live="polite"></span>
         </div>
       </div>
     </div>
@@ -191,9 +248,11 @@
   <script src="d3.v7.min.js"></script>
   <script src="qa-spinner.js"></script>
   <script src="qa-search-select.js"></script>
+  <script src="qa-focus.js"></script>
   <script src="jira-common.js"></script>
   <script src="jira-intake.js?v=5"></script>
-  <script src="jira-reject.js?v=3"></script>
+  <script src="jira-reject.js?v=4"></script>
+  <script src="jira-track.js?v=1"></script>
   <script src="jira-weekly.js?v=1"></script>
   <script src="jira-stats-view.js?v=7"></script>
   <script src="bootstrap.js"></script>

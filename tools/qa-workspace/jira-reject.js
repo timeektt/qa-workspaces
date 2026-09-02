@@ -30,10 +30,10 @@
   // ---------- tabs ----------
   function switchTab(name) {
     document.querySelectorAll('.jv-tab').forEach((b) => b.classList.toggle('active', b.dataset.jtab === name));
-    const intake = $('jv-sub-intake'), list = $('jv-sub-list');
-    if (intake) intake.hidden = name !== 'intake';
-    if (list) list.hidden = name !== 'list';
+    // แสดงเฉพาะ sub view ของแท็บที่เลือก (id = jv-sub-<name>) — เพิ่มแท็บใหม่ไม่ต้องแก้ตรงนี้อีก
+    document.querySelectorAll('.jv-sub').forEach((el) => { el.hidden = el.id !== 'jv-sub-' + name; });
     if (name === 'list') { loadList(); loadPending(); } // โหลดใหม่ทุกครั้งที่เข้าแท็บ — ข้อมูลสดเสมอ
+    if (name === 'track' && window.JiraTrack) window.JiraTrack.enter();
   }
 
   // ---------- images (paste/drop) — mirror ของ jira-intake ----------
@@ -289,5 +289,6 @@
     });
 
     loadPending(); // โหลด badge จำนวน reject ค้างตั้งแต่เปิด (แท็บเริ่มที่ intake ไม่ได้เรียก loadPending ของ list เอง)
+    if (window.JiraTrack) window.JiraTrack.warmBadge(); // badge "เหลือกี่ใบ" ของแท็บติดตาม issue
   };
 })();
