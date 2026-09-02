@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const JC = require('../../scripts/jira/jira-client');
 const JStats = require('../../scripts/jira/jira-stats');
-const RF = require('./rounds-fs');
+const RStore = require('./rounds-store');   // ชั้นกลาง — เลือกเก็บ Google Sheet หรือไฟล์ ตาม .env
 
 const MAP_DIR = __dirname; // เสิร์ฟไฟล์ static ในโฟลเดอร์นี้
 const INTAKE_DIR = path.join(JC.DRAFTS_DIR, 'intake');
@@ -253,12 +253,16 @@ const server = http.createServer(async (req, res) => {
     // ---------- Jira Rounds API (แท็บ "ติดตาม issue") ----------
     // รอบ = ชุดการ์ดที่ต้องแก้ให้เสร็จภายในวันครบกำหนดหนึ่งวัน · เก็บแค่ key+summary — สถานะดึงสดจาก Jira
     if (pathname === '/api/jira/rounds' && req.method === 'GET') {
-      return sendJson(res, 200, { rounds: RF.readRounds(ROUNDS_FILE) });
+      try {
+        return sendJson(res, 200, { rounds: await RStore.readRounds(ROUNDS_FILE), backend: RStore.backend() });
+      } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+      }
     }
 
     if (pathname === '/api/jira/rounds' && req.method === 'POST') {
       const body = await readBody(req);
-      const r = RF.createRound(ROUNDS_FILE, { name: body.name || '', dueDate: body.dueDate || '' });
+      const r = await RStore.createRound(ROUNDS_FILE, { name: body.name || '', dueDate: body.dueDate || '' });
       return r.ok ? sendJson(res, 200, r) : sendJson(res, 400, { error: r.error });
     }
 
@@ -266,7 +270,12 @@ const server = http.createServer(async (req, res) => {
     const mRoundStatus = pathname.match(/^\/api\/jira\/round\/([\w.-]+)\/status$/);
     if (mRoundStatus && req.method === 'GET') {
       if (!JC.envReady()) return sendJson(res, 500, { error: '.env Jira ไม่ครบ' });
-      const round = RF.readRounds(ROUNDS_FILE).find((x) => String(x.id) === mRoundStatus[1]);
+      let round;
+      try {
+        round = (await RStore.readRounds(ROUNDS_FILE)).find((x) => String(x.id) === mRoundStatus[1]);
+      } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+      }
       if (!round) return sendJson(res, 404, { error: 'ไม่พบรอบนี้' });
       const keys = (round.issues || []).map((it) => it.key);
       const out = [];
@@ -288,14 +297,14 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req);
       const key = parseIssueKey(body.key);
       if (!key) return sendJson(res, 400, { error: 'ต้องระบุ issue key' });
-      const r = RF.addIssue(ROUNDS_FILE, mRoundIssues[1], { key, summary: body.summary || '' });
+      const r = await RStore.addIssue(ROUNDS_FILE, mRoundIssues[1], { key, summary: body.summary || '' });
       return r.ok ? sendJson(res, 200, r) : sendJson(res, 400, { error: r.error });
     }
 
     // เอาการ์ดออกจากรอบ
     const mRoundIssueOne = pathname.match(/^\/api\/jira\/round\/([\w.-]+)\/issue\/([\w.-]+)$/);
     if (mRoundIssueOne && req.method === 'DELETE') {
-      const r = RF.removeIssue(ROUNDS_FILE, mRoundIssueOne[1], mRoundIssueOne[2]);
+      const r = await RStore.removeIssue(ROUNDS_FILE, mRoundIssueOne[1], mRoundIssueOne[2]);
       return r.ok ? sendJson(res, 200, r) : sendJson(res, 404, { error: r.error });
     }
 
@@ -303,11 +312,11 @@ const server = http.createServer(async (req, res) => {
     const mRoundOne = pathname.match(/^\/api\/jira\/round\/([\w.-]+)$/);
     if (mRoundOne && req.method === 'PUT') {
       const body = await readBody(req);
-      const r = RF.updateRound(ROUNDS_FILE, mRoundOne[1], { name: body.name || '', dueDate: body.dueDate || '' });
+      const r = await RStore.updateRound(ROUNDS_FILE, mRoundOne[1], { name: body.name || '', dueDate: body.dueDate || '' });
       return r.ok ? sendJson(res, 200, r) : sendJson(res, 400, { error: r.error });
     }
     if (mRoundOne && req.method === 'DELETE') {
-      const r = RF.deleteRound(ROUNDS_FILE, mRoundOne[1]);
+      const r = await RStore.deleteRound(ROUNDS_FILE, mRoundOne[1]);
       return r.ok ? sendJson(res, 200, r) : sendJson(res, 404, { error: r.error });
     }
 

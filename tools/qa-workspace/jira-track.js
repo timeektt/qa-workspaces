@@ -13,6 +13,19 @@
   const LAST_KEY = 'qa-workspace:jira-track:lastRound'; // จำรอบที่เปิดค้างไว้ข้ามการรีเฟรชหน้า
 
   const currentRound = () => rounds.find((r) => String(r.id) === String(currentId)) || null;
+
+  // ป้ายบอกว่าข้อมูลรอบเก็บที่ไหน — กันเข้าใจผิดว่าทำไมเพื่อนไม่เห็นรอบที่เราสร้าง
+  function renderBackend(kind) {
+    const el = $('jtk-backend');
+    if (!el || !kind) return;
+    const sheet = kind === 'sheet';
+    el.hidden = false;
+    el.className = 'jtk-backend' + (sheet ? ' shared' : '');
+    el.textContent = sheet ? '🔗 เก็บบน Google Sheet — ทีมเห็นข้อมูลชุดเดียวกัน' : '💻 เก็บในเครื่องนี้เท่านั้น — คนอื่นไม่เห็น';
+    el.title = sheet
+      ? 'ข้อมูลรอบอยู่บน Google Sheet ที่ตั้งไว้ใน .env (ROUNDS_SHEET_URL)'
+      : 'ยังไม่ได้ตั้ง ROUNDS_SHEET_URL ใน .env — ดูวิธีที่ tools/qa-workspace/apps-script/README.md';
+  }
   const isDone = (st) => st && st.statusCategory === 'done';
 
   // ---------- วันที่ ----------
@@ -160,6 +173,7 @@
       return;
     }
     rounds = r.json.rounds || [];
+    renderBackend(r.json.backend);
     const remembered = keepSelection ? (currentId || safeGet(LAST_KEY)) : currentId;
     currentId = rounds.some((x) => String(x.id) === String(remembered)) ? remembered : (rounds[0] && rounds[0].id) || null;
     safeSet(LAST_KEY, currentId || '');
@@ -189,6 +203,7 @@
       const r = await api('/api/jira/rounds');
       if (!r.ok) return;                       // ต่อ server ไม่ได้ชั่วคราว — เงียบไว้ รอบหน้าค่อยลองใหม่
       rounds = r.json.rounds || [];
+      renderBackend(r.json.backend);
       if (!rounds.some((x) => String(x.id) === String(currentId))) currentId = (rounds[0] && rounds[0].id) || null;
       renderRoundBar();
       renderSummary();
