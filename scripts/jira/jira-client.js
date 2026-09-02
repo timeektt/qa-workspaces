@@ -760,7 +760,8 @@ async function findDuplicates(summary, opts = {}) {
 
 /**
  * ดึง issue เดิมมาดู (สำหรับ retest — เทียบอาการเดิม vs ปัจจุบัน)
- * คืน { ok, key, summary, status, priority, issuetype, components:[{id,name}], description }
+ * คืน { ok, key, summary, status, priority, issuetype, components:[{id,name}], description, reporter }
+ * reporter คืนก็ต่อเมื่อร้องขอ field 'reporter' มาด้วย (ไม่ขอ = null)
  */
 async function getIssue(key, fields = ['summary', 'description', 'status', 'priority', 'issuetype', 'components']) {
   const r = await jira('GET', `/rest/api/3/issue/${encodeURIComponent(key)}?fields=${fields.join(',')}`);
@@ -776,6 +777,7 @@ async function getIssue(key, fields = ['summary', 'description', 'status', 'prio
     issuetype: f.issuetype && f.issuetype.name,
     components: (f.components || []).map(c => ({ id: c.id, name: c.name })),
     description: f.description || null,
+    reporter: f.reporter ? (f.reporter.displayName || f.reporter.emailAddress || null) : null,
   };
 }
 

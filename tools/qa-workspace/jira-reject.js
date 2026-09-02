@@ -81,8 +81,9 @@
   }
 
   // ---------- reject modal ----------
-  function openModal({ issueKey, issueSummary, editStamp = null }) {
-    modalCtx = { issueKey, issueSummary, editStamp };
+  // noteId = ช่องข้อความที่จะแจ้งผลหลังบันทึกสำเร็จ (แท็บ Jira List = jrl-note · แท็บติดตาม issue = jtk-note)
+  function openModal({ issueKey, issueSummary, editStamp = null, noteId = 'jrl-note' }) {
+    modalCtx = { issueKey, issueSummary, editStamp, noteId };
     $('jrj-issue-key').textContent = issueKey;
     $('jrj-issue-summary').textContent = issueSummary ? '· ' + issueSummary : '';
     $('jrj-reason').value = '';
@@ -116,8 +117,11 @@
     });
     restore();
     if (r.ok && r.json.ok) {
+      // เก็บค่าไว้ก่อนปิดหน้าต่าง — closeModal() ล้าง modalCtx ทิ้ง
+      const savedKey = modalCtx.issueKey;
+      const noteEl = $(modalCtx.noteId) || $('jrl-note');
       closeModal();
-      $('jrl-note').textContent = `✓ บันทึก reject ${modalCtx && modalCtx.issueKey || ''} แล้ว — สั่ง Claude "ประมวลผล reject ที่ค้างทั้งหมด"`;
+      noteEl.textContent = `✓ บันทึก reject ${savedKey} แล้ว — ไปดูที่แท็บ Jira List (รายการ reject ที่ค้าง) แล้วสั่ง Claude "ประมวลผล reject ที่ค้างทั้งหมด"`;
       loadPending();
     } else {
       $('jrj-note').textContent = `✗ บันทึกไม่สำเร็จ: ${esc(r.json.error || r.status)}`;
@@ -220,11 +224,13 @@
     const r = await api('/api/jira/rejects').finally(hide);
     const list = (r.ok && r.json.rejects) || [];
     setTabBadge('list', list.length);
-    if (!list.length) { box.innerHTML = '<p class="jm-note">— ยังไม่มี reject intake ค้าง —</p>'; return; }
+    const count = $('jrl-pending-count');
+    if (count) count.textContent = list.length;
+    if (!list.length) { box.innerHTML = '<p class="jin-empty">— ยังไม่มี reject ค้าง — กด “🚫 reject” ที่การ์ดด้านล่างเพื่อเริ่ม —</p>'; return; }
     box.innerHTML = list.map((it) => {
       const preview = esc((it.reason || '').slice(0, 80)) + ((it.reason || '').length > 80 ? '…' : '');
       const img = it.images && it.images.length ? ` · 🖼 ${it.images.length}` : '';
-      return `<div class="jin-item"><span><b>${esc(it.issueKey || '?')}</b> · <small>${esc(it.issueSummary || '')}</small>${img}<br><small>${preview}</small></span><span class="jin-item-actions"><button class="jrl-edit-item" data-stamp="${esc(it.stamp)}">✏️ แก้ไข</button><button class="jrl-rm-item" data-stamp="${esc(it.stamp)}">🗑 ลบ</button></span></div>`;
+      return `<div class="jin-item"><span class="jin-item-main"><b class="jin-item-key">${esc(it.issueKey || '?')}</b> · <small>${esc(it.issueSummary || '')}</small>${img}<br><small>${preview}</small></span><span class="jin-item-actions"><button class="jrl-edit-item jm-btn ghost" data-stamp="${esc(it.stamp)}" title="แก้เหตุผล/รูปของ reject ใบนี้">✏️ แก้ไข</button><button class="jrl-rm-item jm-btn ghost" data-stamp="${esc(it.stamp)}" title="ลบ reject ใบนี้ทิ้ง">🗑 ลบ</button></span></div>`;
     }).join('');
     box.querySelectorAll('.jrl-edit-item').forEach((b) => b.addEventListener('click', () => openEdit(b.dataset.stamp)));
     box.querySelectorAll('.jrl-rm-item').forEach((b) =>
@@ -238,6 +244,9 @@
 
   // เรียกจาก enterJira() ทุกครั้งที่เข้าแท็บ Jira — reset ไปแท็บ intake, wiring ครั้งเดียว
   let wired = false;
+  // เปิดให้แท็บอื่น (ติดตาม issue) เรียกหน้าต่าง reject ตัวเดียวกันได้ — ผลที่บันทึกไปโผล่ที่แท็บ Jira List เหมือนเดิม
+  window.JiraReject = { openModal, reloadPending: () => loadPending() };
+
   window.initJiraReject = function initJiraReject() {
     if (location.protocol === 'file:') return;
     switchTab('intake');

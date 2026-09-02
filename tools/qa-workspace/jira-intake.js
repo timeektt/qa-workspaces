@@ -163,7 +163,9 @@
     const r = await api('/api/jira/intakes').finally(hide);
     const list = (r.ok && r.json.intakes) || [];
     setTabBadge('intake', list.length);
-    if (!list.length) { $('jin-pending').innerHTML = '<p class="jm-note">— ยังไม่มี intake ค้าง —</p>'; return; }
+    const count = $('jin-pending-count');
+    if (count) count.textContent = list.length;
+    if (!list.length) { $('jin-pending').innerHTML = '<p class="jin-empty">— ยังไม่มี intake ค้าง — กรอกฟอร์มด้านบนแล้วกดบันทึกเพื่อเริ่ม —</p>'; return; }
     $('jin-pending').innerHTML = list.map((it) => {
       const preview = esc((it.text || '').slice(0, 80)) + ((it.text || '').length > 80 ? '…' : '');
       const img = it.images && it.images.length ? ` · 🖼 ${it.images.length}` : '';
@@ -171,7 +173,7 @@
       const comp = it.component ? ` · 🏷 ${esc(it.component)}` : '';
       const sprint = it.sprintId ? ` · 🏃 ${esc(it.sprintLabel || it.sprintId)}` : '';
       const editing = it.stamp === editingStamp ? ' jin-item-editing' : '';
-      return `<div class="jin-item${editing}"><span><b>${esc(it.stamp)}</b> · ${esc(it.system || '—')}${type}${comp}${sprint}${img}<br><small>${preview}</small></span><span class="jin-item-actions"><button class="jin-edit-item" data-stamp="${esc(it.stamp)}">✏️ แก้ไข</button><button class="jin-rm-item" data-stamp="${esc(it.stamp)}">🗑 ลบ</button></span></div>`;
+      return `<div class="jin-item${editing}"><span class="jin-item-main"><b class="jin-item-key">${esc(it.stamp)}</b> · ${esc(it.system || '—')}${type}${comp}${sprint}${img}<br><small>${preview}</small></span><span class="jin-item-actions"><button class="jin-edit-item jm-btn ghost" data-stamp="${esc(it.stamp)}" title="แก้ไข intake ใบนี้">✏️ แก้ไข</button><button class="jin-rm-item jm-btn ghost" data-stamp="${esc(it.stamp)}" title="ลบ intake ใบนี้ทิ้ง">🗑 ลบ</button></span></div>`;
     }).join('');
     $('jin-pending').querySelectorAll('.jin-edit-item').forEach((b) =>
       b.addEventListener('click', () => startEdit(b.dataset.stamp)));

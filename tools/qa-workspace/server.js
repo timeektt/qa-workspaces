@@ -281,10 +281,10 @@ const server = http.createServer(async (req, res) => {
       const out = [];
       for (let i = 0; i < keys.length; i += 8) {
         const chunk = await Promise.all(keys.slice(i, i + 8).map(async (key) => {
-          const iss = await JC.getIssue(key, ['summary', 'status']);
+          const iss = await JC.getIssue(key, ['summary', 'status', 'reporter']);
           return iss.ok
-            ? { key, summary: iss.summary, status: iss.status, statusCategory: iss.statusCategory }
-            : { key, summary: '', status: null, statusCategory: null, error: 'ดึงสถานะไม่สำเร็จ' };
+            ? { key, summary: iss.summary, status: iss.status, statusCategory: iss.statusCategory, reporter: iss.reporter }
+            : { key, summary: '', status: null, statusCategory: null, reporter: null, error: 'ดึงสถานะไม่สำเร็จ' };
         }));
         out.push(...chunk);
       }

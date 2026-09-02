@@ -77,6 +77,7 @@
     $('jtk-edit').disabled = none;
     $('jtk-del').disabled = none;
     $('jtk-refresh').disabled = none;
+    $('jtk-copy-left').disabled = none;
     $('jtk-q').disabled = none;
   }
 
@@ -108,9 +109,16 @@
       : st.error
         ? `<span class="jrl-badge rej" title="${esc(st.error)}">ดึงสถานะไม่ได้</span>`
         : statusBadge(st.status, st.statusCategory);
+    // ผู้แจ้ง (reporter) ดึงมาพร้อมสถานะ — การ์ดที่เพิ่งเพิ่ม (pending) หรือดึงสถานะไม่สำเร็จ จะยังไม่มีชื่อ
+    const reporter = st.reporter
+      ? `<br><small class="jtk-reporter" title="ผู้แจ้งการ์ดนี้ใน Jira">👤 ผู้แจ้ง: ${esc(st.reporter)}</small>`
+      : '';
     return `<div class="jrl-card">
-      <span class="jrl-card-main"><a href="${esc(url)}" target="_blank" rel="noopener"><b>${esc(st.key)}</b></a> ${badge}<br><small>${esc(st.summary || '')}</small></span>
-      <button class="jtk-rm-btn jm-btn ghost" data-key="${esc(st.key)}" title="เอา ${esc(st.key)} ออกจากรอบนี้">🗑 เอาออก</button>
+      <span class="jrl-card-main"><a href="${esc(url)}" target="_blank" rel="noopener"><b>${esc(st.key)}</b></a> ${badge}<br><small>${esc(st.summary || '')}</small>${reporter}</span>
+      <span class="jtk-card-actions">
+        <button class="jtk-reject-btn jrl-reject-btn jm-btn" data-key="${esc(st.key)}" data-summary="${esc(st.summary || '')}" title="เขียน reject intake ของ ${esc(st.key)}">🚫 reject</button>
+        <button class="jtk-rm-btn jm-btn ghost" data-key="${esc(st.key)}" title="เอา ${esc(st.key)} ออกจากรอบนี้">🗑 เอาออก</button>
+      </span>
     </div>`;
   }
 
@@ -140,6 +148,40 @@
       h.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
     });
     box.querySelectorAll('.jtk-rm-btn').forEach((b) => b.addEventListener('click', () => removeIssue(b, b.dataset.key)));
+    // reject = หน้าต่างเดียวกับแท็บ Jira List · สิ่งที่บันทึกไปโผล่ใน "รายการ reject ที่ค้าง" ของแท็บนั้นเหมือนเดิม
+    box.querySelectorAll('.jtk-reject-btn').forEach((b) => b.addEventListener('click', () => {
+      if (!window.JiraReject) { $('jtk-note').textContent = '✗ เปิดหน้าต่าง reject ไม่ได้ — ลองรีเฟรชหน้า'; return; }
+      $('jtk-note').textContent = '';
+      window.JiraReject.openModal({ issueKey: b.dataset.key, issueSummary: b.dataset.summary, noteId: 'jtk-note' });
+    }));
+  }
+
+  // ---------- คัดลอกรายการที่ยังไม่เสร็จ ----------
+  // รูปแบบบรรทัดละใบ: "<ชื่อการ์ด> [<url>]" — เอาไปวางในแชท/อีเมลแล้วอ่านรู้เรื่องโดยไม่ต้องเปิดหน้านี้
+  function leftoverText() {
+    return statuses
+      .filter((st) => !isDone(st))
+      .map((st, i) => `${i + 1}. ${(st.summary || st.key).trim()} [${(browseBase || '') + st.key}]`)
+      .join('\n');
+  }
+
+  async function copyLeftover() {
+    const btn = $('jtk-copy-left');
+    const note = $('jtk-note');
+    const round = currentRound();
+    if (!round) { note.textContent = '✗ ยังไม่ได้เลือกรอบ'; return; }
+    const text = leftoverText();
+    if (!text) { note.textContent = 'ℹ️ ไม่มีรายการค้าง — เสร็จครบทุกใบแล้ว'; return; }
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    const n = text.split('\n').length;
+    note.textContent = `✓ คัดลอกรายการที่ยังไม่เสร็จ ${n} ใบแล้ว`;
+    const label = btn.textContent;
+    btn.textContent = '✓ คัดลอกแล้ว';
+    setTimeout(() => { btn.textContent = label; }, 1500);
   }
 
   // ---------- โหลดสถานะสดจาก Jira ----------
@@ -479,6 +521,7 @@
     $('jtk-edit').addEventListener('click', () => { const r = currentRound(); if (r) openModal(r); });
     $('jtk-del').addEventListener('click', deleteRound);
     $('jtk-refresh').addEventListener('click', () => loadRounds());
+    $('jtk-copy-left').addEventListener('click', copyLeftover);
     $('jtk-refresh').title = 'ดึงสถานะล่าสุดของทุกการ์ดในรอบจาก Jira (หน้านี้อัปเดตให้เองทุก 2 นาทีอยู่แล้ว)';
 
     $('jtk-f-save').addEventListener('click', saveRound);

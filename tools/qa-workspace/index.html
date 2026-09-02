@@ -79,10 +79,14 @@
             <button id="jin-copy-cmd" class="jm-btn primary">📋 คัดลอก “ประมวลผล Jira intake ที่ค้างทั้งหมด”</button>
             <span id="jin-note" class="jm-note"></span>
           </div>
-          <h3 class="jin-pending-hd">Pending intakes
-            <button id="jin-refresh" class="jm-btn primary" title="รีเฟรชรายการ intake ค้าง">🔄 รีเฟรช</button>
-          </h3>
-          <div id="jin-pending" class="jin-pending"></div>
+          <section class="jin-pending-sec">
+            <div class="jin-pending-hd">
+              <h3 class="jin-pending-h">📥 intake ที่รอสร้างเป็น issue <span id="jin-pending-count" class="jrl-count">0</span></h3>
+              <button id="jin-refresh" class="jm-btn ghost jin-hd-btn" title="รีเฟรชรายการ intake ค้าง">🔄 รีเฟรช</button>
+            </div>
+            <p class="jin-pending-hint">ร่างที่บันทึกไว้จะมารอตรงนี้จนกว่า Claude จะสร้างเป็นการ์ดใน Jira ให้</p>
+            <div id="jin-pending" class="jin-pending"></div>
+          </section>
         </div>
 
         <div id="jv-sub-list" class="jv-sub" hidden>
@@ -103,8 +107,13 @@
             <span id="jrl-note" class="jm-note"></span>
           </div>
 
-          <h3 class="jin-pending-hd">Reject intakes ที่ค้าง</h3>
-          <div id="jrl-pending" class="jin-pending"></div>
+          <section class="jin-pending-sec">
+            <div class="jin-pending-hd">
+              <h3 class="jin-pending-h">🚫 reject ที่รอ Claude ประมวลผล <span id="jrl-pending-count" class="jrl-count">0</span></h3>
+            </div>
+            <p class="jin-pending-hint">การ์ดที่กด “reject” ไว้ (ทั้งจากหน้านี้และแท็บติดตาม issue) จะมารอตรงนี้ — กดปุ่ม “📋 คัดลอก” ด้านบนแล้ววางให้ Claude เพื่อคอมเมนต์และเปลี่ยนสถานะใน Jira</p>
+            <div id="jrl-pending" class="jin-pending"></div>
+          </section>
 
           <div id="jrl-list" class="jrl-groups"></div>
         </div>
@@ -148,9 +157,10 @@
           <section class="jtk-sec">
             <div class="jtk-sec-hd">
               <h3 class="jtk-sec-h"><span class="jtk-sec-n">3</span> รายการในรอบนี้</h3>
+              <button id="jtk-copy-left" class="jm-btn ghost" title="คัดลอกรายการที่ยังไม่เสร็จ (ชื่อการ์ด + ลิงก์) ไปวางที่อื่น">📋 คัดลอกรายการที่เหลือ</button>
               <button id="jtk-refresh" class="jm-btn primary" title="ดึงสถานะล่าสุดของทุกการ์ดในรอบจาก Jira">🔄 รีเฟรชสถานะ</button>
             </div>
-            <p class="jtk-sec-hint">สถานะดึงจาก Jira จริง อัปเดตให้เองทุก 2 นาที · “🗑 เอาออก” เอาการ์ดออกจากรอบนี้เท่านั้น ไม่ได้แตะการ์ดใน Jira</p>
+            <p class="jtk-sec-hint">สถานะดึงจาก Jira จริง อัปเดตให้เองทุก 2 นาที · “🚫 reject” เขียน reject intake ของการ์ดนั้น แล้วไปโผล่ที่แท็บ Jira List (รายการ reject ที่ค้าง) เหมือนเดิม · “📋 คัดลอกรายการที่เหลือ” ได้ชื่อการ์ดคู่กับลิงก์ของใบที่ยังไม่เสร็จ เอาไปวางในแชทได้เลย · “🗑 เอาออก” เอาการ์ดออกจากรอบนี้เท่านั้น ไม่ได้แตะการ์ดใน Jira</p>
             <div class="jtk-notewrap"><span id="jtk-note" class="jm-note" aria-live="polite"></span></div>
             <div id="jtk-list" class="jrl-groups"></div>
           </section>
