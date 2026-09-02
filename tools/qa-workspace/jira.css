@@ -348,3 +348,9 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 .jtk-form input:focus-visible { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.26); }
 .jtk-req { color: #ff9a95; }
 #jv-sub-track .jv-intro { margin-bottom: 18px; }
+
+/* กลุ่ม "ยังไม่เสร็จ/เสร็จแล้ว" = แผงเดียว — ให้การ์ดในกลุ่มอ่านเป็นก้อนเดียวกัน ไม่ลอยเป็นใบๆ */
+#jtk-list .jrl-group { margin-bottom: 14px; padding: 14px 16px 6px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; }
+#jtk-list .jrl-group.collapsed { padding-bottom: 14px; }
+#jtk-list .jrl-group h4 { margin-bottom: 12px; }
+#jtk-list .jrl-group-body > .jm-note { margin: 0 0 8px; }
