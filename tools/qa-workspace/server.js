@@ -21,6 +21,9 @@ const INTAKE_DIR = path.join(JC.DRAFTS_DIR, 'intake');
 const REJECT_DIR = JC.REJECT_DIR; // agent-data/jira-drafts/reject
 const ROUNDS_FILE = path.join(JC.DRAFTS_DIR, 'rounds.json'); // แท็บ "ติดตาม issue" — รอบติดตาม + การ์ดในรอบ
 const PORT = process.env.PORT || 3060;
+// HOST=0.0.0.0 (หรือ SHARE=1) = เปิดให้เครื่องอื่นในวง LAN เข้าใช้ร่วมกันได้ — ค่าเริ่มต้นยังเป็น 127.0.0.1 (เครื่องตัวเองเท่านั้น)
+// หมายเหตุความปลอดภัย: หน้านี้ไม่มี login — เปิดแล้วทุกคนที่เข้าถึงเครื่องนี้ในวงเดียวกันใช้ได้ทันที
+const HOST = process.env.HOST || (process.env.SHARE ? '0.0.0.0' : '127.0.0.1');
 
 const parseIssueKey = JC.parseIssueKey; // ย้ายไป engine แล้ว (เทสต์ได้โดยไม่ต้อง require server)
 
@@ -318,7 +321,26 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
+// ที่อยู่ IPv4 ของเครื่องในวง LAN (ไม่เอา loopback/virtual) — ไว้พิมพ์ลิงก์ให้ทีมกดต่อ
+function lanAddresses() {
+  const nets = require('os').networkInterfaces();
+  const out = [];
+  for (const list of Object.values(nets)) {
+    for (const ni of list || []) {
+      if (ni.family === 'IPv4' && !ni.internal) out.push(ni.address);
+    }
+  }
+  return out;
+}
+
+server.listen(PORT, HOST, () => {
   console.log(`QA Workspace — Jira: http://localhost:${PORT}/`);
+  if (HOST === '127.0.0.1') {
+    console.log(`(อยากให้ทีมเข้าใช้ร่วมกันในวง LAN: SHARE=1 node tools/qa-workspace/server.js)`);
+  } else {
+    console.log(`(bind ${HOST} — เปิดให้เครื่องอื่นในวง LAN เข้าได้)`);
+    for (const ip of lanAddresses()) console.log(`   ส่งลิงก์นี้ให้ทีม: http://${ip}:${PORT}/`);
+    console.log('   ⚠️  หน้านี้ไม่มี login — ทุกคนที่เข้าถึงวงเน็ตเดียวกันเปิดได้ และอ่าน Jira ผ่านบัญชีใน .env ของเครื่องนี้');
+  }
   if (!JC.envReady()) console.log('⚠️  .env Jira ยังไม่ครบ — คัดลอก .env.example เป็น .env แล้วกรอกค่า');
 });

@@ -170,6 +170,42 @@
     refreshSearchButtons();
   }
 
+  // ---------- อัปเดตเงียบๆ ทุก 2 นาที (ใช้ร่วมกันหลายคน — เห็นสิ่งที่คนอื่นเพิ่ม/เอาออกโดยไม่ต้องกดรีเฟรช) ----------
+  // ไม่โชว์ spinner ไม่ล้างหน้าจอ · ข้ามรอบเมื่อแท็บถูกซ่อน/สลับไปแท็บอื่น/เปิดหน้าต่างแก้รอบอยู่
+  const POLL_MS = 120000;
+  let pollTimer = null;
+  let pollBusy = false;
+
+  function pollPaused() {
+    const sub = $('jv-sub-track');
+    return !sub || sub.hidden || document.visibilityState !== 'visible'
+      || !$('jtk-modal').hidden || pollBusy;
+  }
+
+  async function refreshQuiet() {
+    if (pollPaused()) return;
+    pollBusy = true;
+    try {
+      const r = await api('/api/jira/rounds');
+      if (!r.ok) return;                       // ต่อ server ไม่ได้ชั่วคราว — เงียบไว้ รอบหน้าค่อยลองใหม่
+      rounds = r.json.rounds || [];
+      if (!rounds.some((x) => String(x.id) === String(currentId))) currentId = (rounds[0] && rounds[0].id) || null;
+      renderRoundBar();
+      renderSummary();
+      refreshSearchButtons();
+      const round = currentRound();
+      if (!round || !(round.issues || []).length) { renderList(); return; }
+      const s = await api(`/api/jira/round/${encodeURIComponent(round.id)}/status`, { timeoutMs: 60000 });
+      if (!s.ok || String(currentId) !== String(round.id)) return;
+      statuses = s.json.issues || [];
+      browseBase = s.json.browseBase || browseBase;
+      renderSummary();
+      renderList();
+    } finally {
+      pollBusy = false;
+    }
+  }
+
   const safeGet = (k) => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
   const safeSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* โหมด private = ข้ามไป */ } };
 
@@ -308,6 +344,7 @@
     $('jtk-edit').addEventListener('click', () => { const r = currentRound(); if (r) openModal(r); });
     $('jtk-del').addEventListener('click', deleteRound);
     $('jtk-refresh').addEventListener('click', () => loadRounds());
+    $('jtk-refresh').title = 'ดึงสถานะล่าสุดของทุกการ์ดในรอบจาก Jira (หน้านี้อัปเดตให้เองทุก 2 นาทีอยู่แล้ว)';
 
     $('jtk-f-save').addEventListener('click', saveRound);
     $('jtk-f-cancel').addEventListener('click', closeModal);
@@ -322,6 +359,9 @@
       searchTimer = setTimeout(doSearch, 350);
     });
     q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); doSearch(); } });
+
+    if (!pollTimer) pollTimer = setInterval(refreshQuiet, POLL_MS);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshQuiet(); });
   }
 
   window.JiraTrack = {
