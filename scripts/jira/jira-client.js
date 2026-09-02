@@ -259,8 +259,10 @@ function docPointerNode(docNames) {
     }],
   };
 }
+// wiki v2: `[^ชื่อไฟล์]` → Jira แปลงเป็น mediaGroup (การ์ดไฟล์กดดาวน์โหลดได้ในคอมเมนต์/คำอธิบาย)
+// ต้องขึ้นบรรทัดใหม่ (มีบรรทัดว่างคั่นก่อน) ไม่งั้นถูกดูดเข้า list ก่อนหน้า
 function docPointerWikiLine(docNames) {
-  return `📎 ไฟล์แนบ: ${docNames.join(', ')}`;
+  return `📎 ไฟล์แนบ: ${docNames.map((n) => `[^${n}]`).join(' ')}`;
 }
 
 // ---------- Task 2: decodeDataUri + MAX_ATTACH_BYTES ----------
@@ -536,12 +538,11 @@ async function createDraftIssue(draft, opts = {}) {
         if (!fw.ok) imageErrors.push(`full-width fail ${fw.status}`);
       }
     }
-  } else if (embedInline && attachedDocNames.length && !attachedImageNames.length) {
-    // embedInline แต่รูป upload ไม่สำเร็จเลย (มีแต่เอกสาร) → wiki block ไม่ทำงาน
-    // PUT คำอธิบาย ADF ใหม่ให้มีโหนดชี้เอกสาร (ไม่งั้นเอกสารแนบอยู่แต่ไม่มีข้อความอ้างถึง)
-    const adf = buildDraftDescriptionADF(draft.bodyLines, []);
-    adf.content.push(docPointerNode(attachedDocNames));
-    const upd = await jira('PUT', `/rest/api/3/issue/${key}`, { fields: { description: adf } });
+  } else if (attachedDocNames.length && !attachedImageNames.length) {
+    // มีแต่เอกสาร ไม่มีรูป (ทั้งกรณี embedInline และไม่ embed) → PUT คำอธิบายเป็น wiki v2 + `[^ชื่อไฟล์]`
+    // ให้เอกสารขึ้นเป็นการ์ดไฟล์กดดาวน์โหลดได้ ไม่ใช่แค่ข้อความชื่อไฟล์
+    const wiki = `${bodyLinesToWiki(draft.bodyLines, [])}\n\n${docPointerWikiLine(attachedDocNames)}`;
+    const upd = await jira('PUT', `/rest/api/2/issue/${key}`, { fields: { description: wiki } });
     if (!upd.ok) imageErrors.push(`doc pointer update fail ${upd.status}`);
   }
 
@@ -823,10 +824,10 @@ async function addComment(key, bodyLines, opts = {}) {
       }
     }
   } else if (attachedDocNames.length) {
-    // มีแต่เอกสาร (ไม่มีรูป) → comment ADF ปกติ + โหนดชี้เอกสาร
-    const adf = bodyToADF(bodyLines);
-    adf.content.push(docPointerNode(attachedDocNames));
-    res = await jira('POST', `/rest/api/3/issue/${encodeURIComponent(key)}/comment`, { body: adf });
+    // มีแต่เอกสาร (ไม่มีรูป) → v2 wiki + `[^ชื่อไฟล์]` เพื่อให้ได้การ์ดไฟล์ในคอมเมนต์
+    // (ADF ฝัง media ด้วย attachment id ตรงๆ ไม่ได้ — Jira ตอบ ATTACHMENT_VALIDATION_ERROR)
+    const wiki = `${bodyLinesToWiki(bodyLines, [])}\n\n${docPointerWikiLine(attachedDocNames)}`;
+    res = await jira('POST', `/rest/api/2/issue/${encodeURIComponent(key)}/comment`, { body: wiki });
   } else {
     res = await jira('POST', `/rest/api/3/issue/${encodeURIComponent(key)}/comment`, { body: bodyToADF(bodyLines) });
   }
