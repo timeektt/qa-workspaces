@@ -358,3 +358,19 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 #jtk-list .jtk-g-left .jrl-card { border-color: rgba(245,180,60,0.22); }
 #jtk-list .jrl-group.jtk-g-done { background: rgba(34,195,154,0.10); border-color: rgba(34,195,154,0.30); }
 #jtk-list .jtk-g-done .jrl-card { border-color: rgba(34,195,154,0.24); }
+
+/* modal "วิธีใช้งาน" ของแท็บติดตาม issue — โทนมืดของหน้า Jira */
+.jtk-help-box { width: min(640px, 100%); }
+.jtk-help-h { font-size: 15px; font-weight: 700; color: #f3f4f7; margin: 18px 0 8px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); }
+.jtk-help-h:first-of-type { margin-top: 6px; padding-top: 0; border-top: none; }
+.jtk-help-steps { margin: 0; padding-left: 20px; color: #c5cad4; font-size: 13.5px; line-height: 1.75; }
+.jtk-help-steps li { margin-bottom: 6px; }
+.jtk-help-steps b { color: #f3f4f7; }
+.jtk-help-sub { margin: 10px 0; color: #c5cad4; font-size: 13.5px; line-height: 1.7; }
+.jtk-help-sub b { color: #f3f4f7; }
+.jtk-help-sub code, .jtk-cmd code { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12.5px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 1px 6px; color: #e6eaf2; }
+.jtk-kbd { display: inline-block; font-size: 12.5px; font-weight: 600; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 6px; padding: 0 7px; white-space: nowrap; color: #e6eaf2; }
+.jtk-cmd { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; }
+.jtk-cmd code { flex: 1; padding: 9px 11px; overflow-x: auto; white-space: nowrap; }
+.jtk-cmd .jm-btn { flex-shrink: 0; font-size: 13px; padding: 7px 13px; }
+.jtk-help-note { margin: 10px 0 0; padding: 10px 12px; background: rgba(245,180,60,0.10); border: 1px solid rgba(245,180,60,0.28); border-radius: 9px; color: #f0d9a8; font-size: 13px; line-height: 1.65; }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>QA Workspace — Jira</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231b2436'/><circle cx='16' cy='16' r='9' fill='none' stroke='%2322c39a' stroke-width='2.4'/><circle cx='16' cy='16' r='3' fill='%2322c39a'/></svg>" />
-  <link rel="stylesheet" href="jira.css?v=14" />
+  <link rel="stylesheet" href="jira.css?v=15" />
 </head>
 <body>
   <!-- class="jira-mode" คงไว้เสมอ: CSS โชว์ #jira-view เมื่อ #main มี class นี้ (standalone ไม่มี mode switch) -->
@@ -136,10 +136,42 @@
 
           <div class="jin-actions">
             <button id="jtk-refresh" class="jm-btn primary" title="ดึงสถานะล่าสุดของทุกการ์ดในรอบจาก Jira">🔄 รีเฟรชสถานะ</button>
+            <button id="jtk-help" class="jm-btn ghost" title="วิธีใช้แท็บนี้ และวิธีแชร์ให้ทีมดูพร้อมกัน">❓ วิธีใช้งาน</button>
             <span id="jtk-note" class="jm-note" aria-live="polite"></span>
           </div>
 
           <div id="jtk-list" class="jrl-groups"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help modal (วิธีใช้งานแท็บติดตาม issue) -->
+    <div id="jtk-help-modal" class="jrj-modal" hidden>
+      <div class="jrj-box jtk-help-box">
+        <div class="jrj-hd">
+          <span class="jrj-title">วิธีใช้งาน — ติดตาม issue</span>
+          <button id="jtk-help-close" class="jrj-x" aria-label="ปิดหน้าต่าง (Esc)" title="ปิด (Esc)">✕</button>
+        </div>
+
+        <h4 class="jtk-help-h">1 · ใช้แท็บนี้ยังไง</h4>
+        <ol class="jtk-help-steps">
+          <li><b>สร้างรอบ</b> — กด <span class="jtk-kbd">＋ รอบใหม่</span> เลือกวันครบกำหนด (ชื่อรอบไม่กรอกก็ได้ ระบบตั้งชื่อจากวันที่ให้)</li>
+          <li><b>ใส่การ์ดเข้ารอบ</b> — พิมพ์เลขการ์ด, issue key หรือวาง url ในช่องค้นหา ระบบค้นให้เองไม่ต้องกดปุ่ม แล้วกด <span class="jtk-kbd">＋ เพิ่มเข้ารอบ</span> ที่ผลลัพธ์</li>
+          <li><b>ดูว่าเหลืออะไร</b> — รายการแยกสองกลุ่ม พื้นเหลือง = ยังไม่เสร็จ · พื้นเขียว = เสร็จแล้ว ระบบยึดสถานะจริงจาก Jira (สถานะที่อยู่ในหมวด Done นับว่าเสร็จ)</li>
+          <li><b>อ่านความคืบหน้า</b> — แถบด้านบนบอกวันครบกำหนด เหลืออีกกี่วัน และเสร็จไปกี่ใบ · ตัวเลขแดงบนหัวแท็บคือจำนวนใบที่ยังไม่เสร็จ</li>
+          <li><b>ระหว่างวัน</b> — หน้านี้ดึงสถานะใหม่ให้เองทุก 2 นาที กด <span class="jtk-kbd">🔄 รีเฟรชสถานะ</span> ถ้าอยากได้เดี๋ยวนั้น</li>
+        </ol>
+        <p class="jtk-help-note">🗑 เอาออก = เอาการ์ดออกจากรอบเท่านั้น ไม่ได้แตะการ์ดใน Jira · เก็บหลายรอบพร้อมกันได้ สลับดูที่ช่อง “รอบที่ติดตาม” ด้านบน</p>
+
+        <h4 class="jtk-help-h">2 · แชร์ให้ทีมดูพร้อมกัน</h4>
+        <p class="jtk-help-sub"><b>แบบที่ 1 — ทีมอยู่ออฟฟิศ/วงเน็ตเดียวกัน</b> ปิด server เดิมแล้วเปิดใหม่ด้วยคำสั่งนี้</p>
+        <div class="jtk-cmd"><code id="jtk-cmd-share">SHARE=1 node tools/qa-workspace/server.js</code><button id="jtk-cmd-copy" class="jm-btn ghost">📋 คัดลอก</button></div>
+        <p class="jtk-help-sub">หน้าต่าง terminal จะพิมพ์ลิงก์ <code>http://&lt;ไอพีเครื่องนี้&gt;:3060/</code> ออกมา ส่งลิงก์นั้นให้ทีมเปิดได้เลย</p>
+        <p class="jtk-help-sub"><b>แบบที่ 2 — ทีมทำงานนอกออฟฟิศ</b> ใช้ port forwarding ของ VS Code ที่แท็บ PORTS forward พอร์ต 3060 แล้ว<b>ตั้ง Visibility เป็น Organization</b> (อย่าตั้ง Public เพราะใครมีลิงก์ก็เปิดได้) วิธีนี้ไม่ต้องใส่ SHARE=1</p>
+        <p class="jtk-help-note">⚠️ หน้านี้ไม่มีระบบล็อกอิน ทุกคนที่เปิดลิงก์ได้จะเห็นข้อมูลทั้งหมด และอ่าน Jira ผ่านบัญชีที่ตั้งไว้ในเครื่องนี้ · เครื่องที่รัน server ต้องเปิดค้างไว้</p>
+
+        <div class="jin-actions">
+          <button id="jtk-help-ok" class="jm-btn primary">เข้าใจแล้ว</button>
         </div>
       </div>
     </div>
@@ -252,7 +284,7 @@
   <script src="jira-common.js"></script>
   <script src="jira-intake.js?v=5"></script>
   <script src="jira-reject.js?v=4"></script>
-  <script src="jira-track.js?v=3"></script>
+  <script src="jira-track.js?v=4"></script>
   <script src="jira-weekly.js?v=1"></script>
   <script src="jira-stats-view.js?v=7"></script>
   <script src="bootstrap.js"></script>
