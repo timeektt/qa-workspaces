@@ -354,5 +354,7 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 #jtk-list .jrl-group.collapsed { padding-bottom: 14px; }
 #jtk-list .jrl-group h4 { margin-bottom: 12px; }
 #jtk-list .jrl-group-body > .jm-note { margin: 0 0 8px; }
+#jtk-list .jrl-group.jtk-g-left { background: rgba(245,180,60,0.09); border-color: rgba(245,180,60,0.28); }
+#jtk-list .jtk-g-left .jrl-card { border-color: rgba(245,180,60,0.22); }
 #jtk-list .jrl-group.jtk-g-done { background: rgba(34,195,154,0.10); border-color: rgba(34,195,154,0.30); }
 #jtk-list .jtk-g-done .jrl-card { border-color: rgba(34,195,154,0.24); }
