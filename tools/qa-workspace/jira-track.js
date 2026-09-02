@@ -195,7 +195,7 @@
   function pollPaused() {
     const sub = $('jv-sub-track');
     return !sub || sub.hidden || document.visibilityState !== 'visible'
-      || !$('jtk-modal').hidden || !$('jtk-help-modal').hidden || pollBusy;
+      || !$('jtk-modal').hidden || pollBusy;
   }
 
   async function refreshQuiet() {
@@ -457,22 +457,6 @@
     await loadStatus();             // ดึงสถานะของรอบที่เลื่อนขึ้นมาแทน (ถ้าไม่มีรอบเหลือก็จบตรงนี้)
   }
 
-  // ---------- modal วิธีใช้งาน ----------
-  function openHelp() {
-    $('jtk-help-modal').hidden = false;
-    if (window.QAFocusTrap) QAFocusTrap($('jtk-help-modal').querySelector('.jrj-box'), { onEscape: closeHelp });
-    $('jtk-help-ok').focus();
-  }
-  function closeHelp() { $('jtk-help-modal').hidden = true; }
-
-  async function copyShareCmd(btn) {
-    const cmd = $('jtk-cmd-share').textContent.trim();
-    try { await navigator.clipboard.writeText(cmd); }
-    catch { const ta = document.createElement('textarea'); ta.value = cmd; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
-    btn.textContent = '✓ คัดลอกแล้ว';
-    setTimeout(() => { btn.textContent = '📋 คัดลอก'; }, 1500);
-  }
-
   // ---------- init ----------
   let wired = false;
   function wire() {
@@ -492,18 +476,12 @@
     $('jtk-refresh').addEventListener('click', () => loadRounds());
     $('jtk-refresh').title = 'ดึงสถานะล่าสุดของทุกการ์ดในรอบจาก Jira (หน้านี้อัปเดตให้เองทุก 2 นาทีอยู่แล้ว)';
 
-    $('jtk-help').addEventListener('click', openHelp);
-    $('jtk-help-close').addEventListener('click', closeHelp);
-    $('jtk-help-ok').addEventListener('click', closeHelp);
-    $('jtk-cmd-copy').addEventListener('click', (e) => copyShareCmd(e.currentTarget));
-
     $('jtk-f-save').addEventListener('click', saveRound);
     $('jtk-f-cancel').addEventListener('click', closeModal);
     $('jtk-modal-close').addEventListener('click', closeModal);
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
       if (!$('jtk-modal').hidden) closeModal();
-      else if (!$('jtk-help-modal').hidden) closeHelp();
     });
 
     // autosearch — debounce 350ms (เหมือนแท็บ Jira List) · Enter = ค้นทันที
