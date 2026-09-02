@@ -262,7 +262,7 @@
       const w = (r.json.warnings || []).length ? ` (⚠️ ${r.json.warnings.join(', ')})` : '';
       $('jin-note').textContent = isEdit
         ? `✓ อัปเดตแล้ว: ${r.json.stamp}${w}`
-        : `✓ บันทึกแล้ว: ${r.json.stamp}${w} — สั่ง Claude "ประมวลผล intake ที่ค้างทั้งหมด"`;
+        : `✓ บันทึกแล้ว: ${r.json.stamp}${w} — สั่ง Claude "ประมวลผล Jira intake ที่ค้างทั้งหมด"`;
       loadPending();
     } else {
       btn.textContent = isEdit ? '💾 อัปเดต intake' : 'บันทึก intake';
@@ -270,7 +270,18 @@
     }
   }
 
+  // dropdown 4 ช่อง (project/component/epic/sprint) มีตัวเลือกเยอะ → ทำให้พิมพ์ค้นหาได้
+  function enhanceSelects() {
+    if (!window.QASearchSelect) return;
+    [['jin-system', 'พิมพ์ชื่อระบบหรือ project key…'],
+     ['jin-component', 'พิมพ์ชื่อ component…'],
+     ['jin-epic', 'พิมพ์ชื่อหรือ key ของ epic…'],
+     ['jin-sprint', 'พิมพ์ชื่อ sprint…']].forEach(([id, ph]) =>
+      QASearchSelect.enhance($(id), { searchPlaceholder: ph }));
+  }
+
   window.initJiraIntake = function initJiraIntake() {
+    enhanceSelects();
     if (location.protocol === 'file:') { $('jin-pending').innerHTML = '<p class="jm-note">ต้องเปิดผ่าน server (node tools/qa-workspace/server.js)</p>'; return; }
     const refreshBtn = $('jin-refresh');
     if (refreshBtn) refreshBtn.addEventListener('click', async () => {
@@ -289,11 +300,11 @@
     const cancelBtn = $('jin-cancel-edit');
     if (cancelBtn) cancelBtn.addEventListener('click', cancelEdit);
 
-    // ปุ่มคัดลอกคำสั่ง "ประมวลผล intake ที่ค้างทั้งหมด" (แสดงตลอด ไม่ต้องรอบันทึก)
+    // ปุ่มคัดลอกคำสั่ง "ประมวลผล Jira intake ที่ค้างทั้งหมด" (แสดงตลอด ไม่ต้องรอบันทึก)
     const copyBtn = $('jin-copy-cmd');
-    const COPY_LABEL = '📋 คัดลอก “ประมวลผล intake ที่ค้างทั้งหมด”';
+    const COPY_LABEL = '📋 คัดลอก “ประมวลผล Jira intake ที่ค้างทั้งหมด”';
     if (copyBtn) copyBtn.addEventListener('click', async () => {
-      const cmd = 'ประมวลผล intake ที่ค้างทั้งหมด';
+      const cmd = 'ประมวลผล Jira intake ที่ค้างทั้งหมด';
       try { await navigator.clipboard.writeText(cmd); }
       catch { const ta = document.createElement('textarea'); ta.value = cmd; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
       copyBtn.textContent = '✓ คัดลอกแล้ว';
