@@ -98,9 +98,11 @@
   // ---------- รายการการ์ดในรอบ ----------
   function issueRow(st) {
     const url = (browseBase || '') + st.key;
-    const badge = st.error
-      ? `<span class="jrl-badge rej" title="${esc(st.error)}">ดึงสถานะไม่ได้</span>`
-      : statusBadge(st.status, st.statusCategory);
+    const badge = st.pending
+      ? '<span class="jrl-badge prog">กำลังบันทึก…</span>'
+      : st.error
+        ? `<span class="jrl-badge rej" title="${esc(st.error)}">ดึงสถานะไม่ได้</span>`
+        : statusBadge(st.status, st.statusCategory);
     return `<div class="jrl-card">
       <span class="jrl-card-main"><a href="${esc(url)}" target="_blank" rel="noopener"><b>${esc(st.key)}</b></a> ${badge}<br><small>${esc(st.summary || '')}</small></span>
       <button class="jtk-rm-btn jm-btn ghost" data-key="${esc(st.key)}" title="เอา ${esc(st.key)} ออกจากรอบนี้">🗑 เอาออก</button>
@@ -224,6 +226,35 @@
   const safeGet = (k) => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
   const safeSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* โหมด private = ข้ามไป */ } };
 
+  // ---------- คำสั่งที่เขียนข้อมูล ----------
+  // เก็บข้อมูลบน Google Sheet อาจใช้เวลาหลายวินาที (Apps Script) จึงทำ 2 อย่าง:
+  //   1) วาดผลบนหน้าจอทันทีที่กด แล้วค่อยยิงเบื้องหลัง — พลาดเมื่อไรค่อยถอนกลับ (optimistic)
+  //   2) ยิงพลาด/หมดเวลา ไม่ด่วนสรุปว่าล้มเหลว — ดึงข้อมูลจริงมาดูก่อนว่าบันทึกไปแล้วหรือยัง
+  const WRITE_TIMEOUT_MS = 60000;
+  const writeApi = (path, opts = {}) => api(path, { timeoutMs: WRITE_TIMEOUT_MS, ...opts });
+
+  /** ดึงรายการรอบสดจาก server (ข้ามแคชฝั่งหน้าเว็บ) — ใช้ตรวจว่าคำสั่งที่ยิงพลาดนั้น "ผ่านจริงไหม" */
+  async function fetchRoundsFresh() {
+    const r = await api('/api/jira/rounds', { timeoutMs: WRITE_TIMEOUT_MS });
+    return r.ok ? (r.json.rounds || []) : null;
+  }
+
+  /**
+   * ยิงคำสั่งเขียน แล้วถ้าไม่สำเร็จให้ตรวจกับข้อมูลจริงก่อนสรุป
+   * landed(rounds) = ฟังก์ชันตอบว่า "ผลที่ต้องการเกิดขึ้นแล้วหรือยัง" เมื่อดูจากข้อมูลจริง
+   * คืน { ok, round?, error? } — ok:true ทั้งกรณียิงผ่าน และกรณียิงพลาดแต่ข้อมูลจริงเปลี่ยนแล้ว
+   */
+  async function writeThenVerify(request, landed) {
+    const r = await request();
+    if (r.ok && r.json && r.json.ok) return { ok: true, round: r.json.round };
+    const fresh = await fetchRoundsFresh();
+    if (fresh) {
+      const round = landed(fresh);
+      if (round) return { ok: true, round, recovered: true };
+    }
+    return { ok: false, error: (r.json && r.json.error) || r.status || 'บันทึกไม่สำเร็จ' };
+  }
+
   // ---------- ค้นหา + เพิ่มเข้ารอบ ----------
   function inRound(key) {
     const round = currentRound();
@@ -263,35 +294,79 @@
   async function addIssue(btn, key, summary) {
     const round = currentRound();
     if (!round) { $('jtk-note').textContent = '✗ ยังไม่มีรอบ — กด “＋ รอบใหม่” ก่อน'; return; }
+    const K = String(key).toUpperCase();
+
+    // วาดผลทันที: การ์ดเด้งเข้ากลุ่ม "ยังไม่เสร็จ" ก่อน แล้วค่อยเติมสถานะจริงทีหลัง
+    round.issues.push({ key: K, summary, addedAt: new Date().toISOString() });
+    statuses.push({ key: K, summary, status: null, statusCategory: null, pending: true });
+    renderRoundBar(); renderSummary(); renderList(); refreshSearchButtons();
+    $('jtk-note').textContent = `กำลังบันทึก ${K} เข้ารอบ…`;
     const restore = QASpinner.button(btn, 'กำลังเพิ่ม…');
-    const r = await api(`/api/jira/round/${encodeURIComponent(round.id)}/issues`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, summary }),
-    });
+
+    const res = await writeThenVerify(
+      () => writeApi(`/api/jira/round/${encodeURIComponent(round.id)}/issues`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, summary }),
+      }),
+      (fresh) => {
+        const r2 = fresh.find((x) => String(x.id) === String(round.id));
+        return r2 && (r2.issues || []).some((it) => String(it.key).toUpperCase() === K) ? r2 : null;
+      });
     restore();
-    if (!(r.ok && r.json.ok)) { $('jtk-note').textContent = `✗ เพิ่มไม่สำเร็จ: ${(r.json && r.json.error) || r.status}`; return; }
-    round.issues = r.json.round.issues;
-    $('jtk-note').textContent = `✓ เพิ่ม ${key} เข้ารอบ “${round.name}” แล้ว`;
-    renderRoundBar();
-    refreshSearchButtons();
-    await loadStatus();
+
+    if (!res.ok) {   // ถอนสิ่งที่วาดไว้กลับ เพราะของจริงไม่ได้บันทึก
+      round.issues = round.issues.filter((it) => String(it.key).toUpperCase() !== K);
+      statuses = statuses.filter((st) => String(st.key).toUpperCase() !== K);
+      renderRoundBar(); renderSummary(); renderList(); refreshSearchButtons();
+      $('jtk-note').textContent = `✗ เพิ่มไม่สำเร็จ: ${res.error}`;
+      return;
+    }
+
+    round.issues = res.round.issues;
+    $('jtk-note').textContent = `✓ เพิ่ม ${K} เข้ารอบ “${round.name}” แล้ว`;
+    // ถามสถานะเฉพาะใบที่เพิ่งเพิ่ม (ไม่ถาม Jira ซ้ำทุกใบในรอบ)
+    const one = await api(`/api/jira/issue?q=${encodeURIComponent(K)}`);
+    const found = (one.ok && one.json.issues && one.json.issues[0]) || null;
+    const slot = statuses.find((st) => String(st.key).toUpperCase() === K);
+    const filled = found
+      ? { key: found.key, summary: found.summary, status: found.status, statusCategory: found.statusCategory }
+      : { key: K, summary, status: null, statusCategory: null, error: 'ดึงสถานะไม่สำเร็จ' };
+    if (slot) Object.assign(slot, filled, { pending: false });
+    else statuses.push(filled);
+    renderRoundBar(); renderSummary(); renderList(); refreshSearchButtons();
   }
 
   async function removeIssue(btn, key) {
     const round = currentRound();
     if (!round) return;
-    if (!window.confirm(`เอา ${key} ออกจากรอบ “${round.name}”?`)) return;
-    const restore = QASpinner.button(btn, 'กำลังเอาออก…');
-    const r = await api(`/api/jira/round/${encodeURIComponent(round.id)}/issue/${encodeURIComponent(key)}`, { method: 'DELETE' });
-    restore();
-    if (!(r.ok && r.json.ok)) { $('jtk-note').textContent = `✗ เอาออกไม่สำเร็จ: ${(r.json && r.json.error) || r.status}`; return; }
-    round.issues = r.json.round.issues;
-    statuses = statuses.filter((st) => String(st.key).toUpperCase() !== String(key).toUpperCase());
-    $('jtk-note').textContent = `✓ เอา ${key} ออกจากรอบแล้ว`;
-    renderRoundBar();
-    renderSummary();
-    renderList();
-    refreshSearchButtons();
+    const K = String(key).toUpperCase();
+    if (!window.confirm(`เอา ${K} ออกจากรอบ “${round.name}”?`)) return;
+
+    // เอาออกจากหน้าจอก่อน แล้วค่อยยิง — พลาดค่อยใส่กลับ
+    const keptIssues = round.issues.slice();
+    const keptStatuses = statuses.slice();
+    round.issues = round.issues.filter((it) => String(it.key).toUpperCase() !== K);
+    statuses = statuses.filter((st) => String(st.key).toUpperCase() !== K);
+    renderRoundBar(); renderSummary(); renderList(); refreshSearchButtons();
+    $('jtk-note').textContent = `กำลังเอา ${K} ออกจากรอบ…`;
+
+    const res = await writeThenVerify(
+      () => writeApi(`/api/jira/round/${encodeURIComponent(round.id)}/issue/${encodeURIComponent(K)}`, { method: 'DELETE' }),
+      (fresh) => {
+        const r2 = fresh.find((x) => String(x.id) === String(round.id));
+        return r2 && !(r2.issues || []).some((it) => String(it.key).toUpperCase() === K) ? r2 : null;
+      });
+
+    if (!res.ok) {
+      round.issues = keptIssues;
+      statuses = keptStatuses;
+      renderRoundBar(); renderSummary(); renderList(); refreshSearchButtons();
+      $('jtk-note').textContent = `✗ เอาออกไม่สำเร็จ: ${res.error}`;
+      return;
+    }
+    round.issues = res.round.issues;
+    $('jtk-note').textContent = `✓ เอา ${K} ออกจากรอบแล้ว`;
+    renderRoundBar(); renderSummary(); renderList(); refreshSearchButtons();
   }
 
   // ---------- modal สร้าง/แก้ไขรอบ ----------
@@ -315,16 +390,36 @@
     const editing = modalCtx && modalCtx.id;
     const btn = $('jtk-f-save');
     const restore = QASpinner.button(btn, 'กำลังบันทึก…');
-    const r = await api(editing ? `/api/jira/round/${encodeURIComponent(editing)}` : '/api/jira/rounds', {
-      method: editing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, dueDate }),
-    });
+
+    const res = await writeThenVerify(
+      () => writeApi(editing ? `/api/jira/round/${encodeURIComponent(editing)}` : '/api/jira/rounds', {
+        method: editing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, dueDate }),
+      }),
+      (fresh) => editing
+        ? fresh.find((x) => String(x.id) === String(editing) && x.dueDate === dueDate && (!name || x.name === name))
+        : fresh.find((x) => x.dueDate === dueDate && x.name === (name || `รอบ ${dueDate.split('-').reverse().join('/')}`)));
     restore();
-    if (!(r.ok && r.json.ok)) { $('jtk-f-note').textContent = `✗ บันทึกไม่สำเร็จ: ${(r.json && r.json.error) || r.status}`; return; }
-    currentId = r.json.round.id;
+
+    if (!res.ok) { $('jtk-f-note').textContent = `✗ บันทึกไม่สำเร็จ: ${res.error}`; return; }
+
     closeModal();
-    $('jtk-note').textContent = editing ? '✓ แก้ไขรอบแล้ว' : `✓ สร้างรอบ “${r.json.round.name}” แล้ว`;
-    await loadRounds();
+    $('jtk-note').textContent = editing ? '✓ แก้ไขรอบแล้ว' : `✓ สร้างรอบ “${res.round.name}” แล้ว`;
+    if (editing) {
+      const round = rounds.find((x) => String(x.id) === String(editing));
+      if (round) { round.name = res.round.name; round.dueDate = res.round.dueDate; }
+      renderRoundBar();
+      renderSummary();
+      return;                       // แก้แค่ชื่อ/วันที่ — การ์ดกับสถานะเดิมยังใช้ได้ ไม่ต้องโหลดใหม่
+    }
+    rounds.unshift(res.round);      // รอบใหม่ยังไม่มีการ์ด จึงไม่ต้องถาม Jira เลย
+    currentId = res.round.id;
+    safeSet(LAST_KEY, currentId);
+    statuses = [];
+    renderRoundBar();
+    renderSummary();
+    renderList();
+    refreshSearchButtons();
   }
 
   async function deleteRound() {
@@ -332,14 +427,34 @@
     if (!round) return;
     const n = (round.issues || []).length;
     if (!window.confirm(`ลบรอบ “${round.name}” ทิ้งถาวร?${n ? ` (การ์ด ${n} ใบในรอบจะหายไปจากการติดตามด้วย — ตัวการ์ดใน Jira ไม่ถูกแตะ)` : ''}`)) return;
-    const btn = $('jtk-del');
-    const restore = QASpinner.button(btn, 'กำลังลบ…');
-    const r = await api(`/api/jira/round/${encodeURIComponent(round.id)}`, { method: 'DELETE' });
+
+    const kept = rounds.slice();
+    const keptStatuses = statuses.slice();
+    const keptId = currentId;
+    rounds = rounds.filter((x) => String(x.id) !== String(round.id));   // เอาออกจากหน้าจอก่อน
+    currentId = (rounds[0] && rounds[0].id) || null;
+    statuses = [];
+    renderRoundBar(); renderSummary(); renderList();
+    $('jtk-note').textContent = `กำลังลบรอบ “${round.name}”…`;
+    const restore = QASpinner.button($('jtk-del'), 'กำลังลบ…');
+
+    const res = await writeThenVerify(
+      () => writeApi(`/api/jira/round/${encodeURIComponent(round.id)}`, { method: 'DELETE' }),
+      (fresh) => fresh.some((x) => String(x.id) === String(round.id)) ? null : { id: round.id });
     restore();
-    if (!(r.ok && r.json.ok)) { $('jtk-note').textContent = `✗ ลบไม่สำเร็จ: ${(r.json && r.json.error) || r.status}`; return; }
-    currentId = null;
+
+    if (!res.ok) {                                                       // ใส่กลับ เพราะของจริงยังอยู่
+      rounds = kept;
+      currentId = keptId;
+      statuses = keptStatuses;
+      renderRoundBar(); renderSummary(); renderList(); refreshSearchButtons();
+      $('jtk-note').textContent = `✗ ลบไม่สำเร็จ: ${res.error}`;
+      return;
+    }
+    safeSet(LAST_KEY, currentId || '');
     $('jtk-note').textContent = `✓ ลบรอบ “${round.name}” แล้ว`;
-    await loadRounds({ keepSelection: false });
+    refreshSearchButtons();
+    await loadStatus();             // ดึงสถานะของรอบที่เลื่อนขึ้นมาแทน (ถ้าไม่มีรอบเหลือก็จบตรงนี้)
   }
 
   // ---------- modal วิธีใช้งาน ----------

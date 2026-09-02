@@ -143,9 +143,11 @@ function updateRound(id, name, dueDate) {
   var sh = sheetOf(ROUNDS_SHEET, ROUNDS_HEADER);
   var row = rowIndexOf(sh, 0, id);
   if (row < 0) return { ok: false, error: 'ไม่พบรอบนี้' };
-  sh.getRange(row, 2).setValue(String(name || '').trim() || ('รอบ ' + thaiDate(due)));
-  sh.getRange(row, 3).setValue("'" + due);
-  return { ok: true, round: findRound(id) };
+  var newName = String(name || '').trim() || ('รอบ ' + thaiDate(due));
+  sh.getRange(row, 2, 1, 2).setValues([[newName, "'" + due]]);
+  var round = findRound(id);
+  if (round) { round.name = newName; round.dueDate = due; }
+  return { ok: true, round: round };
 }
 
 function deleteRound(id) {
@@ -169,13 +171,16 @@ function addIssue(id, key, summary) {
   for (var i = 0; i < round.issues.length; i++) {
     if (round.issues[i].key.toUpperCase() === k) return { ok: false, error: k + ' อยู่ในรอบนี้แล้ว' };
   }
-  sheetOf(ISSUES_SHEET, ISSUES_HEADER)
-    .appendRow([String(id), k, String(summary || '').trim(), new Date().toISOString()]);
-  return { ok: true, round: findRound(id) };
+  var issue = { key: k, summary: String(summary || '').trim(), addedAt: new Date().toISOString() };
+  sheetOf(ISSUES_SHEET, ISSUES_HEADER).appendRow([String(id), issue.key, issue.summary, issue.addedAt]);
+  round.issues.push(issue);   // ต่อในหน่วยความจำแทนการอ่านทั้งชีตซ้ำอีกรอบ (เร็วขึ้นเกือบเท่าตัว)
+  return { ok: true, round: round };
 }
 
 function removeIssue(id, key) {
   var k = String(key || '').trim().toUpperCase();
+  var round = findRound(id);
+  if (!round) return { ok: false, error: 'ไม่พบรอบนี้' };
   var sh = sheetOf(ISSUES_SHEET, ISSUES_HEADER);
   var rows = rowsOf(sh);
   var removed = false;
@@ -183,7 +188,8 @@ function removeIssue(id, key) {
     if (asText(rows[i][0]) === String(id) && asText(rows[i][1]).toUpperCase() === k) { sh.deleteRow(i + 2); removed = true; }
   }
   if (!removed) return { ok: false, error: 'ไม่พบการ์ดนี้ในรอบ' };
-  return { ok: true, round: findRound(id) };
+  round.issues = round.issues.filter(function (it) { return it.key.toUpperCase() !== k; });
+  return { ok: true, round: round };   // ไม่อ่านทั้งชีตซ้ำ
 }
 
 /** ย้ายข้อมูลจาก rounds.json เดิมเข้าชีต — ข้ามรอบที่มี id ซ้ำอยู่แล้ว (เรียกซ้ำได้ไม่พัง) */

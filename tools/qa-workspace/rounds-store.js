@@ -16,34 +16,49 @@ function cfg(env = process.env) {
   return RS.configFromEnv(env);
 }
 
+// แคชสั้นๆ เฉพาะโหมดชีต — หนึ่งหน้าจอเรียกอ่านรอบติดๆ กัน 2 ครั้ง (รายการรอบ + สถานะ)
+// ทั้งที่ Apps Script ตอบครั้งละ ~2.5 วินาที · ล้างแคชทุกครั้งที่มีการเขียน จึงไม่เห็นข้อมูลเก่าหลังกดแก้เอง
+const CACHE_MS = 10000;
+let cache = { at: 0, rounds: null };
+const invalidate = () => { cache = { at: 0, rounds: null }; };
+
 async function readRounds(file, env = process.env) {
   const c = cfg(env);
-  return c ? RS.readRounds(c) : RF.readRounds(file);
+  if (!c) return RF.readRounds(file);
+  if (cache.rounds && Date.now() - cache.at < CACHE_MS) return cache.rounds;
+  const rounds = await RS.readRounds(c);
+  cache = { at: Date.now(), rounds };
+  return rounds;
 }
 
 async function createRound(file, data, env = process.env) {
   const c = cfg(env);
-  return c ? RS.createRound(c, data) : RF.createRound(file, data);
+  if (c) { invalidate(); return RS.createRound(c, data); }
+  return RF.createRound(file, data);
 }
 
 async function updateRound(file, id, data, env = process.env) {
   const c = cfg(env);
-  return c ? RS.updateRound(c, id, data) : RF.updateRound(file, id, data);
+  if (c) { invalidate(); return RS.updateRound(c, id, data); }
+  return RF.updateRound(file, id, data);
 }
 
 async function deleteRound(file, id, env = process.env) {
   const c = cfg(env);
-  return c ? RS.deleteRound(c, id) : RF.deleteRound(file, id);
+  if (c) { invalidate(); return RS.deleteRound(c, id); }
+  return RF.deleteRound(file, id);
 }
 
 async function addIssue(file, id, data, env = process.env) {
   const c = cfg(env);
-  return c ? RS.addIssue(c, id, data) : RF.addIssue(file, id, data);
+  if (c) { invalidate(); return RS.addIssue(c, id, data); }
+  return RF.addIssue(file, id, data);
 }
 
 async function removeIssue(file, id, key, env = process.env) {
   const c = cfg(env);
-  return c ? RS.removeIssue(c, id, key) : RF.removeIssue(file, id, key);
+  if (c) { invalidate(); return RS.removeIssue(c, id, key); }
+  return RF.removeIssue(file, id, key);
 }
 
-module.exports = { backend, readRounds, createRound, updateRound, deleteRound, addIssue, removeIssue };
+module.exports = { backend, invalidate, readRounds, createRound, updateRound, deleteRound, addIssue, removeIssue };

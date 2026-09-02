@@ -4,7 +4,9 @@
 // interface ตรงกับ rounds-fs.js ทุกตัว ต่างแค่เป็น async และรับ cfg แทน path ไฟล์
 'use strict';
 
-const DEFAULT_TIMEOUT_MS = 20000;
+// Apps Script ตอน cold start เคยใช้เวลาถึง ~17 วินาที (วัดจริง 2026-09-02) — ตั้งเผื่อไว้กว้าง
+// ถ้าตัดสายเร็วเกินไปจะกลายเป็น "หน้าเว็บบอกว่าไม่สำเร็จ ทั้งที่ชีตบันทึกไปแล้ว"
+const DEFAULT_TIMEOUT_MS = 45000;
 
 /** อ่านค่าตั้งค่าจาก .env — คืน null ถ้ายังไม่ได้ตั้ง (แปลว่าให้ใช้ไฟล์ในเครื่องแทน) */
 function configFromEnv(env = process.env) {
