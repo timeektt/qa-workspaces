@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>QA Workspace — Jira</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231b2436'/><circle cx='16' cy='16' r='9' fill='none' stroke='%2322c39a' stroke-width='2.4'/><circle cx='16' cy='16' r='3' fill='%2322c39a'/></svg>" />
-  <link rel="stylesheet" href="jira.css?v=16" />
+  <link rel="stylesheet" href="jira.css?v=17" />
 </head>
 <body>
   <!-- class="jira-mode" คงไว้เสมอ: CSS โชว์ #jira-view เมื่อ #main มี class นี้ (standalone ไม่มี mode switch) -->
@@ -154,17 +154,43 @@
           <button id="jtk-help-close" class="jrj-x" aria-label="ปิดหน้าต่าง (Esc)" title="ปิด (Esc)">✕</button>
         </div>
 
-        <h4 class="jtk-help-h">1 · ใช้แท็บนี้ยังไง</h4>
-        <ol class="jtk-help-steps">
-          <li><b>สร้างรอบ</b> — กด <span class="jtk-kbd">＋ รอบใหม่</span> เลือกวันครบกำหนด (ชื่อรอบไม่กรอกก็ได้ ระบบตั้งชื่อจากวันที่ให้)</li>
-          <li><b>ใส่การ์ดเข้ารอบ</b> — พิมพ์เลขการ์ด, issue key หรือวาง url ในช่องค้นหา ระบบค้นให้เองไม่ต้องกดปุ่ม แล้วกด <span class="jtk-kbd">＋ เพิ่มเข้ารอบ</span> ที่ผลลัพธ์</li>
-          <li><b>ดูว่าเหลืออะไร</b> — รายการแยกสองกลุ่ม พื้นเหลือง = ยังไม่เสร็จ · พื้นเขียว = เสร็จแล้ว ระบบยึดสถานะจริงจาก Jira (สถานะที่อยู่ในหมวด Done นับว่าเสร็จ)</li>
-          <li><b>อ่านความคืบหน้า</b> — แถบด้านบนบอกวันครบกำหนด เหลืออีกกี่วัน และเสร็จไปกี่ใบ · ตัวเลขแดงบนหัวแท็บคือจำนวนใบที่ยังไม่เสร็จ</li>
-          <li><b>ระหว่างวัน</b> — หน้านี้ดึงสถานะใหม่ให้เองทุก 2 นาที กด <span class="jtk-kbd">🔄 รีเฟรชสถานะ</span> ถ้าอยากได้เดี๋ยวนั้น</li>
-        </ol>
-        <p class="jtk-help-note">🗑 เอาออก = เอาการ์ดออกจากรอบเท่านั้น ไม่ได้แตะการ์ดใน Jira · เก็บหลายรอบพร้อมกันได้ สลับดูที่ช่อง “รอบที่ติดตาม” ด้านบน</p>
+        <p class="jtk-help-lead">หน้านี้แบ่งเป็น 3 ส่วนจากบนลงล่าง — <b>แถบรอบ</b> → <b>ช่องค้นหา</b> → <b>รายการในรอบ</b></p>
 
-        <h4 class="jtk-help-h">2 · แชร์ให้ทีมดูพร้อมกัน</h4>
+        <h4 class="jtk-help-h">1 · แถบรอบ <span class="jtk-help-where">แถวบนสุด</span></h4>
+        <ol class="jtk-help-steps">
+          <li><b>สร้างรอบใหม่</b> — กด <span class="jtk-kbd">＋ รอบใหม่</span> เลือกวันครบกำหนด (ชื่อรอบไม่กรอกก็ได้ ระบบตั้งชื่อจากวันที่ให้)</li>
+          <li><b>สลับรอบ</b> — เก็บหลายรอบพร้อมกันได้ เลือกที่ช่อง <span class="jtk-kbd">รอบที่ติดตาม</span></li>
+          <li><b>แก้ไข / ลบ</b> — <span class="jtk-kbd">✏️ แก้ไขรอบ</span> แก้ชื่อกับวันครบกำหนด · <span class="jtk-kbd">🗑 ลบรอบ</span> ลบทั้งรอบพร้อมรายการข้างใน กู้คืนไม่ได้</li>
+          <li><b>แถบสรุปใต้ปุ่ม</b> — บอกวันครบกำหนด เหลืออีกกี่วัน และเสร็จไปกี่ใบจากทั้งหมด</li>
+          <li><b>ป้ายมุมขวา</b> — บอกว่าข้อมูลรอบเก็บไว้ที่ไหน ทีมเห็นด้วยหรือเปล่า (อ่านส่วนที่ 4)</li>
+        </ol>
+
+        <h4 class="jtk-help-h">2 · ช่องค้นหา Jira <span class="jtk-help-where">ตรงกลาง</span></h4>
+        <ol class="jtk-help-steps">
+          <li><b>ค้นหา</b> — พิมพ์เลขการ์ด, issue key หรือวาง url ระบบค้นให้เองไม่ต้องกดปุ่ม</li>
+          <li><b>เพิ่มเข้ารอบ</b> — กด <span class="jtk-kbd">＋ เพิ่มเข้ารอบ</span> ที่ผลลัพธ์ · การ์ดที่อยู่ในรอบแล้วปุ่มจะขึ้นว่า <span class="jtk-kbd">อยู่ในรอบแล้ว</span> กดซ้ำไม่ได้</li>
+          <li><b>ระหว่างบันทึก</b> — การ์ดเด้งลงรายการทันที ขึ้นป้าย <span class="jtk-kbd">กำลังบันทึก…</span> จนบันทึกเสร็จ ไม่ต้องนั่งรอ</li>
+          <li><b>ถ้าบันทึกไม่สำเร็จจริง</b> — ระบบถอนการ์ดที่เพิ่งเพิ่มออกเองพร้อมบอกสาเหตุ ไม่ทิ้งข้อมูลค้างที่ไม่ตรงกับของจริง</li>
+        </ol>
+
+        <h4 class="jtk-help-h">3 · รายการในรอบ <span class="jtk-help-where">ด้านล่าง</span></h4>
+        <ol class="jtk-help-steps">
+          <li><b>สองกลุ่ม</b> — พื้นเหลือง <b>🔧 ยังไม่เสร็จ</b> · พื้นเขียว <b>✅ เสร็จแล้ว</b></li>
+          <li><b>สถานะมาจาก Jira จริง</b> — การ์ดที่สถานะอยู่ในหมวด Done ระบบย้ายไปกลุ่มเสร็จแล้วให้เอง ไม่ต้องติ๊กเอง</li>
+          <li><b>อัปเดตอัตโนมัติ</b> — ดึงสถานะใหม่ให้ทุก 2 นาที กด <span class="jtk-kbd">🔄 รีเฟรชสถานะ</span> ถ้าอยากได้เดี๋ยวนั้น</li>
+          <li><b>ตัวเลขแดงบนหัวแท็บ</b> — จำนวนใบที่ยังไม่เสร็จของรอบที่เลือกอยู่ เห็นได้โดยไม่ต้องเปิดแท็บนี้</li>
+          <li><b>เอาการ์ดออก</b> — <span class="jtk-kbd">🗑 เอาออก</span> เอาออกจากรอบนี้เท่านั้น ไม่ได้แตะการ์ดใน Jira</li>
+        </ol>
+
+        <h4 class="jtk-help-h">4 · ข้อมูลเก็บที่ไหน — ให้ทีมเห็นชุดเดียวกัน</h4>
+        <p class="jtk-help-sub"><b>ถ้าป้ายมุมขวาบนขึ้นว่า “🔗 เก็บบน Google Sheet”</b> — เรียบร้อยแล้ว ทุกคนที่ตั้งค่าเหมือนกันเห็นและแก้รอบชุดเดียวกัน ต่างคนต่างเปิด server ของตัวเองได้ ไม่ต้องพึ่งเครื่องใครเครื่องหนึ่ง</p>
+        <p class="jtk-help-sub"><b>ถ้าขึ้นว่า “💻 เก็บในเครื่องนี้เท่านั้น”</b> — ยังไม่ได้ตั้งค่า คนอื่นจะไม่เห็นรอบที่เราสร้าง วิธีตั้ง: ใส่ 2 บรรทัดนี้ในไฟล์ <code>.env</code> แล้วปิด server เดิมเปิดใหม่</p>
+        <div class="jtk-cmd"><code>ROUNDS_SHEET_URL=&lt;ลิงก์ Apps Script ที่ลงท้ายด้วย /exec&gt;<br>ROUNDS_SHEET_TOKEN=&lt;รหัสที่ตั้งไว้ในสคริปต์&gt;</code></div>
+        <p class="jtk-help-sub">ขอค่าทั้งสองจากคนในทีมที่ตั้ง Google Sheet ไว้แล้ว · ถ้าจะตั้งใหม่ตั้งแต่ต้น ทำตาม <code>tools/qa-workspace/apps-script/README.md</code></p>
+        <p class="jtk-help-note">🔑 ค่าสองบรรทัดนี้เท่ากับกุญแจของข้อมูลรอบ — ใครได้ไปก็เพิ่ม แก้ และลบข้อมูลได้ทั้งหมด ส่งกันในแชททีมเท่านั้น อย่าโพสต์ที่สาธารณะและอย่า commit ลง git</p>
+
+        <h4 class="jtk-help-h">5 · เปิดให้ทีมดูจากเครื่องเรา <span class="jtk-help-where">ทางเลือก</span></h4>
+        <p class="jtk-help-sub">ตั้ง Google Sheet ตามส่วนที่ 4 แล้วไม่ต้องใช้วิธีนี้ — ให้เพื่อนเปิด server ของตัวเองก็เห็นข้อมูลเดียวกัน · ใช้วิธีนี้เมื่ออยากให้คนที่ไม่ได้ clone repo เปิดดูได้</p>
         <p class="jtk-help-sub"><b>แบบที่ 1 — ทีมอยู่ออฟฟิศ/วงเน็ตเดียวกัน</b> ปิด server เดิมแล้วเปิดใหม่ด้วยคำสั่งนี้</p>
         <div class="jtk-cmd"><code id="jtk-cmd-share">SHARE=1 node tools/qa-workspace/server.js</code><button id="jtk-cmd-copy" class="jm-btn ghost">📋 คัดลอก</button></div>
         <p class="jtk-help-sub">หน้าต่าง terminal จะพิมพ์ลิงก์ <code>http://&lt;ไอพีเครื่องนี้&gt;:3060/</code> ออกมา ส่งลิงก์นั้นให้ทีมเปิดได้เลย</p>

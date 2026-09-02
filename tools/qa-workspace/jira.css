@@ -360,7 +360,10 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 #jtk-list .jtk-g-done .jrl-card { border-color: rgba(34,195,154,0.24); }
 
 /* modal "วิธีใช้งาน" ของแท็บติดตาม issue — โทนมืดของหน้า Jira */
-.jtk-help-box { width: min(640px, 100%); }
+.jtk-help-box { width: min(700px, 100%); }
+.jtk-help-lead { margin: 4px 0 0; color: #b7bdc9; font-size: 13.5px; line-height: 1.7; }
+.jtk-help-lead b { color: #f3f4f7; }
+.jtk-help-where { font-size: 12px; font-weight: 600; color: #b7bdc9; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 1px 9px; margin-left: 6px; vertical-align: middle; }
 .jtk-help-h { font-size: 15px; font-weight: 700; color: #f3f4f7; margin: 18px 0 8px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); }
 .jtk-help-h:first-of-type { margin-top: 6px; padding-top: 0; border-top: none; }
 .jtk-help-steps { margin: 0; padding-left: 20px; color: #c5cad4; font-size: 13.5px; line-height: 1.75; }
