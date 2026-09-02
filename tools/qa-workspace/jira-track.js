@@ -107,12 +107,13 @@
     }
     const left = statuses.filter((st) => !isDone(st));
     const done = statuses.filter(isDone);
-    const group = (title, arr, empty) => {
+    // cls แยกสีพื้นแผงต่อกลุ่ม (เสร็จแล้ว = เขียวอ่อน)
+    const group = (title, arr, empty, cls) => {
       const body = arr.length ? arr.map(issueRow).join('') : `<p class="jm-note">— ${empty} —</p>`;
-      return `<div class="jrl-group"><h4 class="jrl-group-hd" role="button" tabindex="0"><span class="jrl-caret">▾</span> ${title} <span class="jrl-count">${arr.length}</span></h4><div class="jrl-group-body">${body}</div></div>`;
+      return `<div class="jrl-group ${cls}"><h4 class="jrl-group-hd" role="button" tabindex="0"><span class="jrl-caret">▾</span> ${title} <span class="jrl-count">${arr.length}</span></h4><div class="jrl-group-body">${body}</div></div>`;
     };
-    box.innerHTML = group('🔧 ยังไม่เสร็จ', left, 'เสร็จครบทุกใบแล้ว 🎉')
-      + group('✅ เสร็จแล้ว', done, 'ยังไม่มีใบไหนเสร็จ');
+    box.innerHTML = group('🔧 ยังไม่เสร็จ', left, 'เสร็จครบทุกใบแล้ว 🎉', 'jtk-g-left')
+      + group('✅ เสร็จแล้ว', done, 'ยังไม่มีใบไหนเสร็จ', 'jtk-g-done');
     box.querySelectorAll('.jrl-group-hd').forEach((h) => {
       const toggle = () => h.parentElement.classList.toggle('collapsed');
       h.addEventListener('click', toggle);
