@@ -12,6 +12,11 @@
   let modalCtx = null;      // null = สร้างใหม่ · {id} = แก้ไขรอบนั้น
   const LAST_KEY = 'qa-workspace:jira-track:lastRound'; // จำรอบที่เปิดค้างไว้ข้ามการรีเฟรชหน้า
 
+  // ทุกคำสั่งที่แตะข้อมูลรอบต้องวิ่งผ่าน Google Sheet (Apps Script) ซึ่งตอนถูกปลุกครั้งแรก
+  // ใช้เวลาได้ถึงสิบกว่าวินาที — ค่า 20 วินาทีเริ่มต้นของ api() สั้นเกินจนหน้าจอฟ้องหมดเวลา
+  // ทั้งที่ฝั่ง server ยังทำงานปกติ
+  const SHEET_TIMEOUT_MS = 60000;
+
   const currentRound = () => rounds.find((r) => String(r.id) === String(currentId)) || null;
 
   // ป้ายบอกว่าข้อมูลรอบเก็บที่ไหน — กันเข้าใจผิดว่าทำไมเพื่อนไม่เห็นรอบที่เราสร้าง
@@ -163,8 +168,8 @@
   // ---------- โหลดรอบทั้งหมด ----------
   async function loadRounds({ keepSelection = true } = {}) {
     const box = $('jtk-list');
-    box.innerHTML = QASpinner.inline('กำลังโหลดรอบติดตาม…');
-    const r = await api('/api/jira/rounds');
+    box.innerHTML = QASpinner.inline('กำลังโหลดรอบติดตาม… (ครั้งแรกอาจรอสิบกว่าวินาที ระหว่างปลุก Google Sheet)');
+    const r = await api('/api/jira/rounds', { timeoutMs: SHEET_TIMEOUT_MS });
     if (!r.ok) {
       rounds = [];
       renderRoundBar();
@@ -202,7 +207,7 @@
     if (pollPaused()) return;
     pollBusy = true;
     try {
-      const r = await api('/api/jira/rounds');
+      const r = await api('/api/jira/rounds', { timeoutMs: SHEET_TIMEOUT_MS });
       if (!r.ok) return;                       // ต่อ server ไม่ได้ชั่วคราว — เงียบไว้ รอบหน้าค่อยลองใหม่
       rounds = r.json.rounds || [];
       renderBackend(r.json.backend);
@@ -230,7 +235,7 @@
   // เก็บข้อมูลบน Google Sheet อาจใช้เวลาหลายวินาที (Apps Script) จึงทำ 2 อย่าง:
   //   1) วาดผลบนหน้าจอทันทีที่กด แล้วค่อยยิงเบื้องหลัง — พลาดเมื่อไรค่อยถอนกลับ (optimistic)
   //   2) ยิงพลาด/หมดเวลา ไม่ด่วนสรุปว่าล้มเหลว — ดึงข้อมูลจริงมาดูก่อนว่าบันทึกไปแล้วหรือยัง
-  const WRITE_TIMEOUT_MS = 60000;
+  const WRITE_TIMEOUT_MS = SHEET_TIMEOUT_MS;
   const writeApi = (path, opts = {}) => api(path, { timeoutMs: WRITE_TIMEOUT_MS, ...opts });
 
   /** ดึงรายการรอบสดจาก server (ข้ามแคชฝั่งหน้าเว็บ) — ใช้ตรวจว่าคำสั่งที่ยิงพลาดนั้น "ผ่านจริงไหม" */
@@ -508,7 +513,7 @@
     // เรียกตอนเข้าหน้า Jira ครั้งแรก — อัปเดต badge จำนวนใบที่ยังไม่เสร็จโดยไม่ต้องเปิดแท็บ
     async warmBadge() {
       if (location.protocol === 'file:') return;
-      const r = await api('/api/jira/rounds');
+      const r = await api('/api/jira/rounds', { timeoutMs: SHEET_TIMEOUT_MS });
       if (!r.ok) return;
       rounds = r.json.rounds || [];
       const remembered = safeGet(LAST_KEY);

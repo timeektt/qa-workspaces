@@ -7,14 +7,15 @@
   async function api(path, opts = {}) {
     // timeout กัน fetch ค้างไม่รู้จบ (server ล่ม/ช้า) — คืน {ok:false} แทน throw ให้ caller reset UI ได้
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs || 20000);
+    const limitMs = opts.timeoutMs || 20000;
+    const timer = setTimeout(() => ctrl.abort(), limitMs);
     try {
       const res = await fetch(path, { ...opts, signal: ctrl.signal });
       const json = await res.json().catch(() => ({}));
       return { ok: res.ok, status: res.status, json };
     } catch (e) {
       const error = e.name === 'AbortError'
-        ? 'หมดเวลารอ server (20 วินาที) — server ยังรันอยู่ไหม? (node tools/qa-workspace/server.js)'
+        ? `หมดเวลารอ server (${Math.round(limitMs / 1000)} วินาที) — server ยังรันอยู่ไหม? (node tools/qa-workspace/server.js)`
         : 'ต่อ server ไม่ได้ — ตรวจว่า server รันอยู่ (node tools/qa-workspace/server.js)';
       return { ok: false, status: 0, json: { error } };
     } finally {
