@@ -1,4 +1,4 @@
-// tools/qa-workspace/rounds-fs.js — เก็บ "รอบติดตาม issue" ลง JSON ไฟล์เดียว (Node built-in only)
+// tools/qa-workspace/server/rounds-fs.js — เก็บ "รอบติดตาม issue" ลง JSON ไฟล์เดียว (Node built-in only)
 // โครงไฟล์: { "rounds": [ { id, name, dueDate:"YYYY-MM-DD", createdAt, issues:[{key,summary,addedAt}] } ] }
 // เก็บแค่ key + summary — สถานะ (เสร็จ/ยังไม่เสร็จ) ดึงสดจาก Jira ทุกครั้ง ไม่เก็บค้างในไฟล์
 const fs = require('fs');

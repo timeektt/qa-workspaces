@@ -45,12 +45,12 @@ node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"
 ROUNDS_SHEET_URL=https://script.google.com/macros/s/AKfy…/exec
 ROUNDS_SHEET_TOKEN=ค่าเดียวกับ SHARED_TOKEN
 ```
-แล้ว restart server (`node tools/qa-workspace/server.js`) — แท็บติดตาม issue จะขึ้นป้ายว่ากำลังเก็บบน Google Sheet
+แล้ว restart server (`node tools/qa-workspace/server/server.js`) — แท็บติดตาม issue จะขึ้นป้ายว่ากำลังเก็บบน Google Sheet
 
 **7. ย้ายข้อมูลเดิมขึ้นชีต** (ถ้าเคยสร้างรอบไว้ในเครื่องแล้ว — ทำเฉพาะคนที่มีข้อมูลเดิม)
 ```bash
-node tools/qa-workspace/rounds-migrate.js         # ดูก่อนว่าจะย้ายอะไร
-node tools/qa-workspace/rounds-migrate.js --yes   # ย้ายจริง
+node tools/qa-workspace/server/rounds-migrate.js         # ดูก่อนว่าจะย้ายอะไร
+node tools/qa-workspace/server/rounds-migrate.js --yes   # ย้ายจริง
 ```
 
 ---

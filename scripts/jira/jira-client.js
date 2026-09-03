@@ -2,7 +2,7 @@
 /**
  * Shared Jira client — REST helper + ADF builders + intake/reject store
  *
- * ใช้โดย tools/qa-workspace/server.js (Jira intake/list/reject endpoints)
+ * ใช้โดย tools/qa-workspace/server/server.js (Jira intake/list/reject endpoints)
  * และ skill /jira-issue (ประมวลผล draft → สร้าง issue / reject การ์ด)
  *
  * config อ่านจาก .env:

@@ -284,7 +284,7 @@
 
   window.initJiraIntake = function initJiraIntake() {
     enhanceSelects();
-    if (location.protocol === 'file:') { $('jin-pending').innerHTML = '<p class="jm-note">ต้องเปิดผ่าน server (node tools/qa-workspace/server.js)</p>'; return; }
+    if (location.protocol === 'file:') { $('jin-pending').innerHTML = '<p class="jm-note">ต้องเปิดผ่าน server (node tools/qa-workspace/server/server.js)</p>'; return; }
     const refreshBtn = $('jin-refresh');
     if (refreshBtn) refreshBtn.addEventListener('click', async () => {
       const restore = QASpinner.button(refreshBtn, 'กำลังโหลด…');

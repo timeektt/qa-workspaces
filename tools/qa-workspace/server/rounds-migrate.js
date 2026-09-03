@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// tools/qa-workspace/rounds-migrate.js — ย้ายรอบติดตามจากไฟล์ในเครื่องขึ้น Google Sheet (สั่งครั้งเดียว)
+// tools/qa-workspace/server/rounds-migrate.js — ย้ายรอบติดตามจากไฟล์ในเครื่องขึ้น Google Sheet (สั่งครั้งเดียว)
 //
-//   node tools/qa-workspace/rounds-migrate.js            # ดูว่าจะย้ายอะไรบ้าง (ไม่เขียนจริง)
-//   node tools/qa-workspace/rounds-migrate.js --yes      # ย้ายจริง
+//   node tools/qa-workspace/server/rounds-migrate.js            # ดูว่าจะย้ายอะไรบ้าง (ไม่เขียนจริง)
+//   node tools/qa-workspace/server/rounds-migrate.js --yes      # ย้ายจริง
 //
 // อ่านค่า ROUNDS_SHEET_URL / ROUNDS_SHEET_TOKEN จาก .env · รอบที่มี id อยู่บนชีตแล้วจะถูกข้าม (สั่งซ้ำได้)
 'use strict';

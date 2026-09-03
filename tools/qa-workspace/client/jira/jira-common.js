@@ -15,8 +15,8 @@
       return { ok: res.ok, status: res.status, json };
     } catch (e) {
       const error = e.name === 'AbortError'
-        ? `หมดเวลารอ server (${Math.round(limitMs / 1000)} วินาที) — server ยังรันอยู่ไหม? (node tools/qa-workspace/server.js)`
-        : 'ต่อ server ไม่ได้ — ตรวจว่า server รันอยู่ (node tools/qa-workspace/server.js)';
+        ? `หมดเวลารอ server (${Math.round(limitMs / 1000)} วินาที) — server ยังรันอยู่ไหม? (node tools/qa-workspace/server/server.js)`
+        : 'ต่อ server ไม่ได้ — ตรวจว่า server รันอยู่ (node tools/qa-workspace/server/server.js)';
       return { ok: false, status: 0, json: { error } };
     } finally {
       clearTimeout(timer);

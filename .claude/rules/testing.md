@@ -15,7 +15,7 @@ npm test          # = node --test → รันทุกไฟล์ใน test/
   - ใช้ `JC.JIRA_PROJECT_KEY` / `JC.DEFAULT_BUG_EPIC` ในการ assert
   - ค่าที่อาจว่าง (default epic) → assert แบบมีเงื่อนไข: `if (JC.DEFAULT_BUG_EPIC) assert... else assert undefined`
 - **ส่วนที่แตะ network** (`jira()`, `getComponents`, `findDuplicates`, `rejectIssue`) — ถ้าจะเทสต์ ให้ stub `global.fetch` (Node 18+ มี `fetch` เป็น global)
-- **อย่า `require('../tools/qa-workspace/server.js')` ในเทสต์** — มันจะ `server.listen()` ทันทีตอน require (ชน port)
+- **อย่า `require('../tools/qa-workspace/server/server.js')` ในเทสต์** — มันจะ `server.listen()` ทันทีตอน require (ชน port)
   - logic ที่อยากเทสต์จาก server → ย้ายไป `scripts/jira/jira-client.js` แล้ว export (เช่นที่ทำกับ `parseIssueKey`)
 
 ## โครงสร้าง

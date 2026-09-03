@@ -1,4 +1,4 @@
-// tools/qa-workspace/rounds-sheets.js — เก็บ "รอบติดตาม issue" ไว้บน Google Sheet ผ่าน Apps Script Web App
+// tools/qa-workspace/server/rounds-sheets.js — เก็บ "รอบติดตาม issue" ไว้บน Google Sheet ผ่าน Apps Script Web App
 // โค้ดฝั่งชีตอยู่ที่ apps-script/rounds-api.gs (วิธีติดตั้งดู apps-script/README.md)
 // ทุกคำสั่งเป็น POST JSON ก้อนเดียว { token, action, ... } → Apps Script จับ LockService ให้แล้ว
 // interface ตรงกับ rounds-fs.js ทุกตัว ต่างแค่เป็น async และรับ cfg แทน path ไฟล์

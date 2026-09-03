@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const R = require('../tools/qa-workspace/rounds-fs.js');
+const R = require('../tools/qa-workspace/server/rounds-fs.js');
 
 function tmpFile() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rounds-fs-'));

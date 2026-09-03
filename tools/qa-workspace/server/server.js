@@ -6,17 +6,17 @@
  * ตัว UI เขียนแค่ "draft" (intake / reject intake) ลงโฟลเดอร์ agent-data/jira-drafts
  * ตัวที่ยิง Jira จริง (สร้าง issue / comment+ย้ายสถานะ) คือ Claude ผ่าน skill /jira-issue
  *
- *   node tools/qa-workspace/server.js          # เปิดที่ port 3060
- *   PORT=xxxx node tools/qa-workspace/server.js
+ *   node tools/qa-workspace/server/server.js          # เปิดที่ port 3060
+ *   PORT=xxxx node tools/qa-workspace/server/server.js
  */
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const JC = require('../../scripts/jira/jira-client');
-const JStats = require('../../scripts/jira/jira-stats');
+const JC = require('../../../scripts/jira/jira-client');
+const JStats = require('../../../scripts/jira/jira-stats');
 const RStore = require('./rounds-store');   // ชั้นกลาง — เลือกเก็บ Google Sheet หรือไฟล์ ตาม .env
 
-const MAP_DIR = __dirname; // เสิร์ฟไฟล์ static ในโฟลเดอร์นี้
+const MAP_DIR = path.join(__dirname, '..'); // เสิร์ฟไฟล์ static ของ tools/qa-workspace (โฟลเดอร์แม่ของ server/)
 const INTAKE_DIR = path.join(JC.DRAFTS_DIR, 'intake');
 const REJECT_DIR = JC.REJECT_DIR; // agent-data/jira-drafts/reject
 const ROUNDS_FILE = path.join(JC.DRAFTS_DIR, 'rounds.json'); // แท็บ "ติดตาม issue" — รอบติดตาม + การ์ดในรอบ
@@ -345,7 +345,7 @@ function lanAddresses() {
 server.listen(PORT, HOST, () => {
   console.log(`QA Workspace — Jira: http://localhost:${PORT}/`);
   if (HOST === '127.0.0.1') {
-    console.log(`(อยากให้ทีมเข้าใช้ร่วมกันในวง LAN: SHARE=1 node tools/qa-workspace/server.js)`);
+    console.log(`(อยากให้ทีมเข้าใช้ร่วมกันในวง LAN: SHARE=1 node tools/qa-workspace/server/server.js)`);
   } else {
     console.log(`(bind ${HOST} — เปิดให้เครื่องอื่นในวง LAN เข้าได้)`);
     for (const ip of lanAddresses()) console.log(`   ส่งลิงก์นี้ให้ทีม: http://${ip}:${PORT}/`);

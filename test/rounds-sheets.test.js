@@ -1,8 +1,8 @@
 // test/rounds-sheets.test.js — ตัวต่อ Google Sheet (ยิงจริงไม่ได้ในเทสต์ จึงส่ง fetch ปลอมเข้าไป)
 const { test } = require('node:test');
 const assert = require('node:assert');
-const RS = require('../tools/qa-workspace/rounds-sheets.js');
-const RStore = require('../tools/qa-workspace/rounds-store.js');
+const RS = require('../tools/qa-workspace/server/rounds-sheets.js');
+const RStore = require('../tools/qa-workspace/server/rounds-store.js');
 
 const okFetch = (captured, body = { ok: true, rounds: [] }) => async (url, opts) => {
   captured.url = url;

@@ -1,4 +1,4 @@
-// tools/qa-workspace/rounds-store.js — ชั้นกลางของข้อมูล "รอบติดตาม issue"
+// tools/qa-workspace/server/rounds-store.js — ชั้นกลางของข้อมูล "รอบติดตาม issue"
 // เลือกที่เก็บจาก .env: ตั้ง ROUNDS_SHEET_URL + ROUNDS_SHEET_TOKEN = เก็บบน Google Sheet (ทีมเห็นร่วมกัน)
 //                        ไม่ตั้ง = เก็บไฟล์ agent-data/jira-drafts/rounds.json ในเครื่องเหมือนเดิม
 // ทุกฟังก์ชันเป็น async เพื่อให้ route ฝั่ง server เรียกแบบเดียวกันไม่ว่าเก็บที่ไหน

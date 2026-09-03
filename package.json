@@ -4,8 +4,8 @@
   "description": "QA Workspace — หน้า Jira (Create Issue + List/Reject) ยิงบั๊กเข้า Jira ผ่าน Claude",
   "private": true,
   "scripts": {
-    "start": "node tools/qa-workspace/server.js",
-    "jira": "node tools/qa-workspace/server.js",
+    "start": "node tools/qa-workspace/server/server.js",
+    "jira": "node tools/qa-workspace/server/server.js",
     "test": "node --test"
   },
   "engines": {
