@@ -7,7 +7,7 @@ repo นี้คือหน้าเว็บภายในทีม QA ส�
 หน้าเว็บ (`tools/qa-workspace/`) เขียนได้แค่ **draft** ลง `agent-data/jira-drafts/`
 **Claude คือฝั่งที่ยิง Jira จริง** — เมื่อผู้ใช้สั่ง จะอ่าน draft → สร้าง issue / comment+ย้ายสถานะ → ลบ draft
 
-- ผู้ใช้พิมพ์ **"ประมวลผล intake ที่ค้างทั้งหมด"** → invoke skill `/jira-issue` (ส่วนสร้าง issue)
+- ผู้ใช้พิมพ์ **"ประมวลผล Jira intake ที่ค้างทั้งหมด"** → invoke skill `/jira-issue` (ส่วนสร้าง issue)
 - ผู้ใช้พิมพ์ **"ประมวลผล reject ที่ค้างทั้งหมด"** → invoke skill `/jira-issue` (ส่วน reject)
 
 รายละเอียดขั้นตอน + API ของ engine อยู่ใน `.claude/skills/jira-issue/SKILL.md` + `reference.md` — **อ่านก่อนประมวลผลทุกครั้ง**

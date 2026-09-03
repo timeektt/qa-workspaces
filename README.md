@@ -11,10 +11,10 @@
 ```
 [หน้าเว็บ]  วางบั๊ก+รูป / กด reject   ─►  เขียน draft ลงโฟลเดอร์
 [ผู้ใช้]    กดปุ่มคัดลอกคำสั่ง        ─►  วางให้ Claude
-[Claude]   "ประมวลผล intake/reject ที่ค้างทั้งหมด"  ─►  อ่าน draft → ยิง Jira → ลบ draft
+[Claude]   "ประมวลผล Jira intake / reject ที่ค้างทั้งหมด"  ─►  อ่าน draft → ยิง Jira → ลบ draft
 ```
 
-- แท็บ **Create Issue** → ปุ่ม "ประมวลผล intake ที่ค้างทั้งหมด"
+- แท็บ **Create Issue** → ปุ่ม "ประมวลผล Jira intake ที่ค้างทั้งหมด"
 - แท็บ **Jira List** → ปุ่ม "ประมวลผล reject ที่ค้างทั้งหมด"
 
 ## ติดตั้ง
@@ -45,7 +45,7 @@ npm start                   # เปิด server ที่ http://localhost:306
 
 **เปิดบั๊กใหม่:**
 1. แท็บ Create Issue → เลือก Bug/Improvement → วางรูป (paste) + พิมพ์คำอธิบาย → เลือก component/epic/sprint → **บันทึก intake**
-2. กด **📋 คัดลอก "ประมวลผล intake ที่ค้างทั้งหมด"** → วางให้ Claude → Claude สร้าง issue แล้วคืนลิงก์
+2. กด **📋 คัดลอก "ประมวลผล Jira intake ที่ค้างทั้งหมด"** → วางให้ Claude → Claude สร้าง issue แล้วคืนลิงก์
 
 **Reject การ์ดที่ dev ส่ง retest:**
 1. แท็บ Jira List → ค้นหาการ์ด (key/url/เลข) หรือหาจากรายการ → กด **🚫 reject**

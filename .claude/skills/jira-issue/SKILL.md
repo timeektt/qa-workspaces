@@ -1,6 +1,6 @@
 ---
 name: jira-issue
-description: ประมวลผล draft ที่หน้า QA Workspace (Create Issue + Jira List) เขียนไว้ แล้วยิงเข้า Jira จริง — intake → สร้าง Bug/Improvement, reject intake → comment + ย้ายสถานะการ์ด. Trigger เมื่อผู้ใช้พิมพ์ "ประมวลผล intake ที่ค้างทั้งหมด", "ประมวลผล reject ที่ค้างทั้งหมด", "เปิด Jira", "create bug", "reject การ์ด" หรือวาง failure ที่ต้องเปิด issue.
+description: ประมวลผล draft ที่หน้า QA Workspace (Create Issue + Jira List) เขียนไว้ แล้วยิงเข้า Jira จริง — intake → สร้าง Bug/Improvement, reject intake → comment + ย้ายสถานะการ์ด. Trigger เมื่อผู้ใช้พิมพ์ "ประมวลผล Jira intake ที่ค้างทั้งหมด", "ประมวลผล reject ที่ค้างทั้งหมด", "เปิด Jira", "create bug", "reject การ์ด" หรือวาง failure ที่ต้องเปิด issue.
 ---
 
 # jira-issue
@@ -15,9 +15,9 @@ config มาจาก `.env` (`JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, 
 
 ---
 
-## 1. "ประมวลผล intake ที่ค้างทั้งหมด" → สร้าง issue
+## 1. "ประมวลผล Jira intake ที่ค้างทั้งหมด" → สร้าง issue
 
-**Trigger:** ผู้ใช้พิมพ์ "ประมวลผล intake ที่ค้างทั้งหมด" (ปุ่มคัดลอกในแท็บ Create Issue)
+**Trigger:** ผู้ใช้พิมพ์ "ประมวลผล Jira intake ที่ค้างทั้งหมด" (ปุ่มคัดลอกในแท็บ Create Issue)
 
 ทำ **ทุก** intake ที่ `status: pending` (ไม่ใช่แค่ล่าสุด) — วนทีละใบ:
 
