@@ -344,7 +344,7 @@ body { margin: 0; font-family: 'Prompt','Kanit','Sarabun',system-ui,sans-serif; 
 .jtk-danger:hover:not(:disabled) { background: rgba(240,68,56,0.14); }
 .jtk-roundbar select:disabled { opacity: 0.55; cursor: default; }
 
-.jtk-summary:not(:empty) { padding: 14px 16px; margin: 0; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 11px; }
+.jtk-summary:not(:empty) { padding: 14px 16px; margin: 0 0 12px; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 11px; }
 .jtk-sum-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 10px; }
 .jtk-sum-name { font-size: 15.5px; color: #f3f4f7; }
 .jtk-sum-due { font-size: 13px; color: #9aa1af; }
